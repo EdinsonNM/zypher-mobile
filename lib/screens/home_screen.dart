@@ -15,6 +15,11 @@ import 'package:zypher/domain/enrollment/usecases/get_events_by_enrollment_and_d
 
 import '../domain/enrollment/models/enrollment.dart';
 import 'package:zypher/core/constants/tailwind_colors.dart';
+import 'asistencias_screen.dart';
+import 'observaciones_screen.dart';
+import 'configuracion_screen.dart';
+import 'package:provider/provider.dart';
+import '../core/providers/student_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -24,28 +29,210 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey();
-  DateTime _selectedDate = DateTime.now();
-  int _currentStudentIndex = 0;
-  List<EnrollmentWithRelations> _students = [];
-  List<EnrollmentEvent> _timelineItems = [];
+  int _selectedIndex = 0;
   AcademicYear? _activePeriod;
-  EnrollmentWithRelations? currentEnrollment;
   final supabaseClient = Supabase.instance.client;
+
+  final List<Widget> _screens = [
+    HomeBody(),
+    AsistenciasScreen(),
+    ObservacionesScreen(),
+    ConfiguracionScreen(),
+  ];
+
   @override
   void initState() {
     super.initState();
     _fetchActivePeriod();
-    //_fetchStudents();
+  }
+
+  Future<void> _fetchActivePeriod() async {
+    final activePeriod = await GetActivePeriodUseCase(
+      AcademicPeriodServiceRepository(Supabase.instance.client),
+    ).execute();
+    if (activePeriod == null) return;
+    setState(() => _activePeriod = activePeriod);
+    _fetchStudents(activePeriod);
+  }
+
+  Future<void> _fetchStudents(AcademicYear activePeriod) async {
+    final user = supabaseClient.auth.currentUser;
+    final userEmail = user?.email ?? '';
+    final enrollments = await GetEnrollmentsByGuardianUseCase(
+      SupabaseEnrollmentRepository(supabaseClient),
+    ).execute(
+      GetEnrollmentsByGuardianDTO(
+        academicPeriodId: activePeriod.id ?? '',
+        email: userEmail,
+      ),
+    );
+    Provider.of<StudentProvider>(context, listen: false).setStudents(enrollments);
+  }
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Consumer<StudentProvider>(
+          builder: (context, studentProvider, _) {
+            final students = studentProvider.students;
+            final current = studentProvider.currentIndex;
+            return students.isEmpty
+                ? const Text('Zypher')
+                : DropdownButtonHideUnderline(
+                    child: DropdownButton<int>(
+                      value: current,
+                      items: List.generate(
+                        students.length,
+                        (i) => DropdownMenuItem(
+                          value: i,
+                          child: Text('${students[i].student.firstName} ${students[i].student.lastName}'),
+                        ),
+                      ),
+                      onChanged: (i) {
+                        if (i != null) studentProvider.changeStudent(i);
+                      },
+                    ),
+                  );
+          },
+        ),
+        actions: [
+          Consumer<StudentProvider>(
+            builder: (context, studentProvider, _) {
+              final currentStudent = studentProvider.currentStudent;
+              if (currentStudent == null) return Container();
+              final student = currentStudent.student;
+              return Padding(
+                padding: const EdgeInsets.only(right: 16.0),
+                child: GestureDetector(
+                  onTap: () {
+                    showModalBottomSheet(
+                      context: context,
+                      shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                      ),
+                      builder: (context) {
+                        return ListView(
+                          shrinkWrap: true,
+                          children: [
+                            const SizedBox(height: 16),
+                            const Center(
+                              child: Text(
+                                'Cambiar de estudiante',
+                                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            ...List.generate(
+                              studentProvider.students.length,
+                              (i) {
+                                final s = studentProvider.students[i].student;
+                                return ListTile(
+                                  leading: CircleAvatar(
+                                    backgroundImage: s.thumbnail != null ? NetworkImage(s.thumbnail!) : null,
+                                    child: s.thumbnail == null
+                                        ? Text(
+                                            '${s.firstName.isNotEmpty ? s.firstName[0] : ''}${s.lastName.isNotEmpty ? s.lastName[0] : ''}',
+                                            style: const TextStyle(color: Colors.white),
+                                          )
+                                        : null,
+                                  ),
+                                  title: Text('${s.firstName} ${s.lastName}'),
+                                  selected: i == studentProvider.currentIndex,
+                                  onTap: () {
+                                    studentProvider.changeStudent(i);
+                                    Navigator.pop(context);
+                                  },
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+                        );
+                      },
+                    );
+                  },
+                  child: CircleAvatar(
+                    backgroundImage: student.thumbnail != null ? NetworkImage(student.thumbnail!) : null,
+                    child: student.thumbnail == null
+                        ? Text(
+                            '${student.firstName.isNotEmpty ? student.firstName[0] : ''}${student.lastName.isNotEmpty ? student.lastName[0] : ''}',
+                            style: const TextStyle(color: Colors.white),
+                          )
+                        : null,
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+      body: _screens[_selectedIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: _onItemTapped,
+        selectedItemColor: Colors.black,
+        unselectedItemColor: Colors.black54,
+        backgroundColor: Colors.white,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.check_circle_outline),
+            label: 'Asistencias',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.visibility),
+            label: 'Observaciones',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Configuración',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class HomeBody extends StatefulWidget {
+  @override
+  State<HomeBody> createState() => _HomeBodyState();
+}
+
+class _HomeBodyState extends State<HomeBody> {
+  DateTime _selectedDate = DateTime.now();
+  List<EnrollmentEvent> _timelineItems = [];
+  AcademicYear? _activePeriod;
+  final supabaseClient = Supabase.instance.client;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchActivePeriod();
+  }
+
+  Future<void> _fetchActivePeriod() async {
+    final activePeriod = await GetActivePeriodUseCase(
+      AcademicPeriodServiceRepository(Supabase.instance.client),
+    ).execute();
+    if (activePeriod == null) return;
+    setState(() => _activePeriod = activePeriod);
     _fetchTimelineItems();
   }
 
   Future<void> _fetchTimelineItems() async {
-    if (_students.isEmpty) {
-      return;
-    }
-    final studentEnrollment = _students[_currentStudentIndex];
-
+    final studentProvider = Provider.of<StudentProvider>(context, listen: false);
+    final currentStudent = studentProvider.currentStudent;
+    if (currentStudent == null) return;
     final events = await GetEventsByEnrollmentAndDateUseCase(
       observationRepository: EnrollmentObservationServiceRepository(
         supabaseClient,
@@ -54,133 +241,86 @@ class _HomeScreenState extends State<HomeScreen> {
         supabaseClient,
       ),
     ).execute(
-      enrollmentId: studentEnrollment.enrollment.id,
+      enrollmentId: currentStudent.enrollment.id,
       date: _selectedDate,
     );
     setState(() => _timelineItems = events);
   }
 
-  Future<void> _fetchStudents() async {
-    final user = supabaseClient.auth.currentUser;
-    final userEmail = user?.email ?? '';
-
-    final enrollments = await GetEnrollmentsByGuardianUseCase(
-      SupabaseEnrollmentRepository(supabaseClient),
-    ).execute(
-      GetEnrollmentsByGuardianDTO(
-        academicPeriodId: _activePeriod?.id ?? '',
-        email: userEmail,
-      ),
-    );
-    setState(() => _students = enrollments);
-  }
-
-  _fetchActivePeriod() async {
-    final activePeriod =
-        await GetActivePeriodUseCase(
-          AcademicPeriodServiceRepository(Supabase.instance.client),
-        ).execute();
-    if (activePeriod == null) {
-      return;
-    }
-    setState(() => _activePeriod = activePeriod);
-    _fetchStudents();
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      key: _scaffoldKey,
-      appBar: AppBar(
-        title: const Text('Zypher'),
-        actions: [
-          IconButton(onPressed: () {}, icon: const Icon(Icons.notifications)),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () {
-              supabaseClient.auth.signOut();
-            },
+    final studentProvider = Provider.of<StudentProvider>(context);
+    final currentStudent = studentProvider.currentStudent;
+    return Column(
+      children: [
+        // Sección de bienvenida y año académico
+        Container(
+          width: double.infinity,
+          color: Theme.of(context).colorScheme.surface,
+          padding: const EdgeInsets.symmetric(
+            horizontal: 24.0,
+            vertical: 16.0,
           ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Sección de bienvenida y año académico
-          Container(
-            width: double.infinity,
-            color: Theme.of(context).colorScheme.surface,
-            padding: const EdgeInsets.symmetric(
-              horizontal: 24.0,
-              vertical: 16.0,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  '¡Bienvenido!',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                '¡Bienvenido!',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Año Académico - ${_activePeriod?.year ?? "2025"}',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.7),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'Año Académico - ${_activePeriod?.year ?? "2025"}',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withOpacity(0.7),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-          Expanded(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    if (_students.isNotEmpty) _buildStudentHeader(),
-                    const SizedBox(height: 16),
-                    _buildWeeklyCalendar(),
-                    const SizedBox(height: 16),
-                    _buildTimeline(),
-                  ],
-                ),
+        ),
+        Expanded(
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                children: [
+                  if (currentStudent != null) _buildStudentHeader(currentStudent, studentProvider),
+                  const SizedBox(height: 16),
+                  _buildWeeklyCalendar(),
+                  const SizedBox(height: 16),
+                  _buildTimeline(),
+                ],
               ),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
-  Widget _buildStudentHeader() {
-    final studentEnrollment = _students[_currentStudentIndex];
+  Widget _buildStudentHeader(EnrollmentWithRelations studentEnrollment, StudentProvider studentProvider) {
     final student = studentEnrollment.student;
     final grade = studentEnrollment.grade;
-
     return Row(
       children: [
         IconButton(
           icon: const Icon(Icons.chevron_left),
-          onPressed:
-              _currentStudentIndex > 0
-                  ? () => setState(() => _currentStudentIndex--)
-                  : null,
+          onPressed: studentProvider.currentIndex > 0
+              ? () => studentProvider.changeStudent(studentProvider.currentIndex - 1)
+              : null,
         ),
         CircleAvatar(
           radius: 24,
-          backgroundImage:
-              student.thumbnail != null
-                  ? NetworkImage(student.thumbnail!)
-                  : null,
-          child:
-              student.thumbnail == null
-                  ? Text(
-                    '${student.firstName[0]}${student.lastName[0]}',
-                    style: const TextStyle(color: Colors.white),
-                  )
-                  : null,
+          backgroundImage: student.thumbnail != null ? NetworkImage(student.thumbnail!) : null,
+          child: student.thumbnail == null
+              ? Text(
+                  '${student.firstName.isNotEmpty ? student.firstName[0] : ''}${student.lastName.isNotEmpty ? student.lastName[0] : ''}',
+                  style: const TextStyle(color: Colors.white),
+                )
+              : null,
         ),
         const SizedBox(width: 16),
         Expanded(
@@ -194,9 +334,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Text(
                 '${grade.level.toString().split('.').last} / ${grade.name}',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withOpacity(0.6),
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                 ),
               ),
             ],
@@ -204,10 +342,9 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         IconButton(
           icon: const Icon(Icons.chevron_right),
-          onPressed:
-              _currentStudentIndex < _students.length - 1
-                  ? () => setState(() => _currentStudentIndex++)
-                  : null,
+          onPressed: studentProvider.currentIndex < studentProvider.students.length - 1
+              ? () => studentProvider.changeStudent(studentProvider.currentIndex + 1)
+              : null,
         ),
       ],
     );
