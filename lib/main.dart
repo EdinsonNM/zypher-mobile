@@ -4,6 +4,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:zypher/screens/home_screen.dart';
 import 'screens/login_screen.dart';
+import 'screens/auth_wrapper.dart';
 import 'package:provider/provider.dart';
 import 'core/providers/student_provider.dart';
 import 'core/providers/theme_provider.dart';
@@ -64,9 +65,9 @@ class MyApp extends StatelessWidget {
         ), dialogTheme: DialogThemeData(backgroundColor: const Color(0xFF23272A)),
       ),
       themeMode: themeProvider.themeMode,
-      initialRoute: '/',
+      home: const AuthWrapper(),
       routes: {
-        '/': (context) => const LoginScreen(),
+        '/login': (context) => const LoginScreen(),
         '/home': (context) => const HomeScreen(),
       },
     );

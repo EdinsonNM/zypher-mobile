@@ -49,9 +49,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
       AcademicPeriodServiceRepository(Supabase.instance.client),
     ).execute();
     if (activePeriod == null) return;
-    setState(() => _activePeriod = activePeriod);
-    _fetchTimelineItems();
-    _fetchAllStats();
+    if (mounted) {
+      setState(() => _activePeriod = activePeriod);
+      _fetchTimelineItems();
+      _fetchAllStats();
+    }
   }
 
   Future<void> _fetchTimelineItems() async {
@@ -69,8 +71,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
       enrollmentId: currentStudent.enrollment.id,
       date: _selectedDate,
     );
-    if (!mounted) return;
-    setState(() => _timelineItems = events);
+    if (mounted) {
+      setState(() => _timelineItems = events);
+    }
   }
 
   Future<void> _fetchAllStats() async {
@@ -78,7 +81,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final currentStudent = studentProvider.currentStudent;
     if (currentStudent == null || _activePeriod == null) return;
 
-    setState(() => _isLoadingStats = true);
+    if (mounted) {
+      setState(() => _isLoadingStats = true);
+    }
 
     try {
       final startDate = _activePeriod!.startDate ?? DateTime.now().subtract(const Duration(days: 30));
@@ -261,111 +266,116 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     final studentProvider = Provider.of<StudentProvider>(context);
     final currentStudent = studentProvider.currentStudent;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Scaffold(
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (currentStudent != null)
-                  StudentHeader(
-                    studentEnrollment: currentStudent,
-                    studentProvider: studentProvider,
+      backgroundColor: isDark ? const Color(0xFF0A0A0A) : Colors.transparent,
+      body: Container(
+        color: isDark ? const Color(0xFF0A0A0A) : const Color(0xFFFAFAFA),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (currentStudent != null)
+                    StudentHeader(
+                      studentEnrollment: currentStudent,
+                      studentProvider: studentProvider,
+                    ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'Historial de Llegada',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white : const Color(0xFF0F172A),
+                    ),
                   ),
-                const SizedBox(height: 16),
-                Text(
-                  'Historial de Llegada',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
+                  const SizedBox(height: 12),
+                  ArrivalHistoryChart(enrollmentId: currentStudent?.enrollment.id),
+                  const SizedBox(height: 32),
+                  Text(
+                    'Información para Padres',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white : const Color(0xFF0F172A),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                ArrivalHistoryChart(enrollmentId: currentStudent?.enrollment.id),
-                const SizedBox(height: 24),
-                Text(
-                  'Información para Padres',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
+                  const SizedBox(height: 20),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        StatCard(
+                          title: 'Asistencia',
+                          value: '${_attendancePercentage.toStringAsFixed(1)}%',
+                          icon: Icons.calendar_today,
+                          color: const Color(0xFF3B82F6),
+                          isLoading: _isLoadingStats,
+                          onTap: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Asistencia del período actual')),
+                            );
+                          },
+                        ),
+                        const SizedBox(width: 16),
+                        StatCard(
+                          title: 'Observaciones',
+                          value: _recentObservations.toString(),
+                          icon: Icons.assignment,
+                          color: const Color(0xFFF59E0B),
+                          isLoading: _isLoadingStats,
+                          onTap: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Observaciones recientes del estudiante')),
+                            );
+                          },
+                        ),
+                        const SizedBox(width: 16),
+                        StatCard(
+                          title: 'Eventos Padres',
+                          value: _upcomingParentEvents.toString(),
+                          icon: Icons.event,
+                          color: const Color(0xFF10B981),
+                          isLoading: _isLoadingStats,
+                          onTap: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Próximos eventos de Escuela de Padres')),
+                            );
+                          },
+                        ),
+                        const SizedBox(width: 16),
+                        StatCard(
+                          title: 'Pagos Pendientes',
+                          value: _pendingPayments.toString(),
+                          icon: Icons.payment,
+                          color: const Color(0xFFEF4444),
+                          isLoading: _isLoadingStats,
+                          onTap: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Estado de pagos de la matrícula')),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(height: 16),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      StatCard(
-                        title: 'Asistencia',
-                        value: '${_attendancePercentage.toStringAsFixed(1)}%',
-                        icon: Icons.calendar_today,
-                        color: Colors.blue,
-                        isLoading: _isLoadingStats,
-                        onTap: () {
-                          // Navegar a vista detallada de asistencia
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Asistencia del período actual')),
-                          );
-                        },
-                      ),
-                      const SizedBox(width: 16),
-                      StatCard(
-                        title: 'Observaciones',
-                        value: _recentObservations.toString(),
-                        icon: Icons.assignment,
-                        color: Colors.orange,
-                        isLoading: _isLoadingStats,
-                        onTap: () {
-                          // Navegar a vista de observaciones
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Observaciones recientes del estudiante')),
-                          );
-                        },
-                      ),
-                      const SizedBox(width: 16),
-                      StatCard(
-                        title: 'Eventos Padres',
-                        value: _upcomingParentEvents.toString(),
-                        icon: Icons.event,
-                        color: Colors.green,
-                        isLoading: _isLoadingStats,
-                        onTap: () {
-                          // Navegar a eventos de escuela de padres
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Próximos eventos de Escuela de Padres')),
-                          );
-                        },
-                      ),
-                      const SizedBox(width: 16),
-                      StatCard(
-                        title: 'Pagos Pendientes',
-                        value: _pendingPayments.toString(),
-                        icon: Icons.payment,
-                        color: Colors.red,
-                        isLoading: _isLoadingStats,
-                        onTap: () {
-                          // Navegar a vista de pagos
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Estado de pagos de la matrícula')),
-                          );
-                        },
-                      ),
-                    ],
+                  const SizedBox(height: 32),
+                  Text(
+                    'Actividad Reciente',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white : const Color(0xFF0F172A),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  'Actividad Reciente',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    height: 300,
+                    child: ActivityList(),
                   ),
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  height: 300,
-                  child: ActivityList(),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -399,7 +409,9 @@ class _ArrivalHistoryChartState extends State<ArrivalHistoryChart> {
     // Usar un enrollment_id real de la base de datos si no se proporciona uno
     final enrollmentId = widget.enrollmentId ?? '8552773b-5390-4952-a086-eaa9579f4700';
     
-    setState(() => _isLoading = true);
+    if (mounted) {
+      setState(() => _isLoading = true);
+    }
 
     try {
       // Obtener datos de asistencia según el período seleccionado
@@ -444,26 +456,26 @@ class _ArrivalHistoryChartState extends State<ArrivalHistoryChart> {
   }
 
   void _changePeriod(String period) {
-    setState(() => _selectedPeriod = period);
-    _fetchAttendanceData();
+    if (mounted) {
+      setState(() => _selectedPeriod = period);
+      _fetchAttendanceData();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Container(
-      height: 250,
-      padding: const EdgeInsets.all(16),
+      height: 280,
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFE5E7EB),
+          width: 1,
+        ),
       ),
       child: Column(
         children: [
@@ -476,11 +488,15 @@ class _ArrivalHistoryChartState extends State<ArrivalHistoryChart> {
               _buildPeriodButton('3 Meses', '3months'),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           // Gráfico
           Expanded(
             child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? Center(
+                    child: CircularProgressIndicator(
+                      color: isDark ? Colors.white : const Color(0xFF3B82F6),
+                    ),
+                  )
                 : _buildBarChart(),
           ),
         ],
@@ -490,19 +506,32 @@ class _ArrivalHistoryChartState extends State<ArrivalHistoryChart> {
 
   Widget _buildPeriodButton(String label, String period) {
     final isSelected = _selectedPeriod == period;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return GestureDetector(
       onTap: () => _changePeriod(period),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.blue : Colors.grey[200],
-          borderRadius: BorderRadius.circular(20),
+          color: isSelected 
+              ? (isDark ? const Color(0xFF3B82F6) : const Color(0xFF3B82F6))
+              : (isDark ? const Color(0xFF2A2A2A) : const Color(0xFFF3F4F6)),
+          borderRadius: BorderRadius.circular(8),
+          border: isSelected 
+              ? null 
+              : Border.all(
+                  color: isDark ? const Color(0xFF404040) : const Color(0xFFE5E7EB),
+                  width: 1,
+                ),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: isSelected ? Colors.white : Colors.black87,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            color: isSelected 
+                ? Colors.white 
+                : (isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280)),
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+            fontSize: 14,
           ),
         ),
       ),
@@ -510,21 +539,32 @@ class _ArrivalHistoryChartState extends State<ArrivalHistoryChart> {
   }
 
   Widget _buildBarChart() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     if (_attendanceData.isEmpty) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.bar_chart, size: 48, color: Colors.grey),
-            SizedBox(height: 8),
+            Icon(
+              Icons.bar_chart, 
+              size: 48, 
+              color: isDark ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF),
+            ),
+            const SizedBox(height: 8),
             Text(
               'No hay datos de asistencia disponibles',
-              style: TextStyle(color: Colors.grey),
+              style: TextStyle(
+                color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+              ),
             ),
-            SizedBox(height: 4),
+            const SizedBox(height: 4),
             Text(
               'para el período seleccionado',
-              style: TextStyle(color: Colors.grey, fontSize: 12),
+              style: TextStyle(
+                color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280), 
+                fontSize: 12,
+              ),
             ),
           ],
         ),
@@ -543,6 +583,8 @@ class _ArrivalHistoryChartState extends State<ArrivalHistoryChart> {
   }
 
   Widget _buildBarChartView(List<Map<String, dynamic>> chartData) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return BarChart(
       BarChartData(
         alignment: BarChartAlignment.spaceAround,
@@ -551,7 +593,7 @@ class _ArrivalHistoryChartState extends State<ArrivalHistoryChart> {
         barTouchData: BarTouchData(
           enabled: true,
           touchTooltipData: BarTouchTooltipData(
-            tooltipBgColor: Colors.blue.withOpacity(0.8),
+            tooltipBgColor: isDark ? const Color(0xFF374151) : const Color(0xFF1F2937),
             getTooltipItem: (group, groupIndex, rod, rodIndex) {
               if (group.x.toInt() < chartData.length) {
                 final date = chartData[group.x.toInt()]['date'];
@@ -582,7 +624,10 @@ class _ArrivalHistoryChartState extends State<ArrivalHistoryChart> {
                       padding: const EdgeInsets.only(top: 8.0),
                       child: Text(
                         date,
-                        style: const TextStyle(fontSize: 10),
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+                        ),
                       ),
                     );
                   }
@@ -599,7 +644,10 @@ class _ArrivalHistoryChartState extends State<ArrivalHistoryChart> {
               getTitlesWidget: (value, meta) {
                 return Text(
                   '${value.toInt()}:00',
-                  style: const TextStyle(fontSize: 10),
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+                  ),
                 );
               },
             ),
@@ -614,7 +662,9 @@ class _ArrivalHistoryChartState extends State<ArrivalHistoryChart> {
             barRods: [
               BarChartRodData(
                 toY: data['hour'].toDouble(),
-                color: data['hour'] > 0 ? Colors.blue : Colors.grey[300],
+                color: data['hour'] > 0 
+                    ? const Color(0xFF3B82F6) 
+                    : (isDark ? const Color(0xFF374151) : const Color(0xFFF3F4F6)),
                 width: 25,
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(4),
@@ -629,24 +679,35 @@ class _ArrivalHistoryChartState extends State<ArrivalHistoryChart> {
   }
 
   Widget _buildLineChartView(List<Map<String, dynamic>> chartData) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     // Filtrar solo datos con valores > 0 para el gráfico de líneas
     final validData = chartData.where((data) => data['hour'] > 0).toList();
     
     if (validData.isEmpty) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.show_chart, size: 48, color: Colors.grey),
-            SizedBox(height: 8),
+            Icon(
+              Icons.show_chart, 
+              size: 48, 
+              color: isDark ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF),
+            ),
+            const SizedBox(height: 8),
             Text(
               'No hay datos de asistencia',
-              style: TextStyle(color: Colors.grey),
+              style: TextStyle(
+                color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+              ),
             ),
-            SizedBox(height: 4),
+            const SizedBox(height: 4),
             Text(
               'en este período',
-              style: TextStyle(color: Colors.grey, fontSize: 12),
+              style: TextStyle(
+                color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280), 
+                fontSize: 12,
+              ),
             ),
           ],
         ),
@@ -662,13 +723,13 @@ class _ArrivalHistoryChartState extends State<ArrivalHistoryChart> {
           verticalInterval: 1,
           getDrawingHorizontalLine: (value) {
             return FlLine(
-              color: Colors.grey[300]!,
+              color: isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB),
               strokeWidth: 1,
             );
           },
           getDrawingVerticalLine: (value) {
             return FlLine(
-              color: Colors.grey[300]!,
+              color: isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB),
               strokeWidth: 1,
             );
           },
@@ -691,7 +752,10 @@ class _ArrivalHistoryChartState extends State<ArrivalHistoryChart> {
                       padding: const EdgeInsets.only(top: 8.0),
                       child: Text(
                         date,
-                        style: const TextStyle(fontSize: 10),
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+                        ),
                       ),
                     );
                   }
@@ -708,7 +772,10 @@ class _ArrivalHistoryChartState extends State<ArrivalHistoryChart> {
               getTitlesWidget: (value, meta) {
                 return Text(
                   '${value.toInt()}:00',
-                  style: const TextStyle(fontSize: 10),
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+                  ),
                 );
               },
             ),
@@ -716,7 +783,9 @@ class _ArrivalHistoryChartState extends State<ArrivalHistoryChart> {
         ),
         borderData: FlBorderData(
           show: true,
-          border: Border.all(color: Colors.grey[300]!),
+          border: Border.all(
+            color: isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB),
+          ),
         ),
         minX: 0,
         maxX: (chartData.length - 1).toDouble(),
@@ -730,7 +799,7 @@ class _ArrivalHistoryChartState extends State<ArrivalHistoryChart> {
               return FlSpot(index.toDouble(), data['hour'].toDouble());
             }).toList(),
             isCurved: true,
-            color: Colors.blue,
+            color: const Color(0xFF3B82F6),
             barWidth: 3,
             isStrokeCapRound: true,
             dotData: FlDotData(
@@ -738,22 +807,22 @@ class _ArrivalHistoryChartState extends State<ArrivalHistoryChart> {
               getDotPainter: (spot, percent, barData, index) {
                 return FlDotCirclePainter(
                   radius: 4,
-                  color: Colors.blue,
+                  color: const Color(0xFF3B82F6),
                   strokeWidth: 2,
-                  strokeColor: Colors.white,
+                  strokeColor: isDark ? const Color(0xFF1A1A1A) : Colors.white,
                 );
               },
             ),
             belowBarData: BarAreaData(
               show: true,
-              color: Colors.blue.withOpacity(0.1),
+              color: const Color(0xFF3B82F6).withOpacity(0.1),
             ),
           ),
         ],
         lineTouchData: LineTouchData(
           enabled: true,
           touchTooltipData: LineTouchTooltipData(
-            tooltipBgColor: Colors.blue.withOpacity(0.8),
+            tooltipBgColor: isDark ? const Color(0xFF374151) : const Color(0xFF1F2937),
             getTooltipItems: (touchedSpots) {
               return touchedSpots.map((touchedSpot) {
                 final index = touchedSpot.x.toInt();

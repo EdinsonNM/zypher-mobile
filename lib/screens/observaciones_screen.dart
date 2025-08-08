@@ -34,9 +34,11 @@ class _ObservacionesScreenState extends State<ObservacionesScreen> {
         Supabase.instance.client,
       ),
     ).execute(enrollmentId: currentStudent.enrollment.id);
-    setState(() {
-      _observations = observations;
-    });
+    if (mounted) {
+      setState(() {
+        _observations = observations;
+      });
+    }
   }
 
   Color _getSeverityColor(String severity) {

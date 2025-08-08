@@ -44,8 +44,10 @@ class _HomeScreenState extends State<HomeScreen> {
       AcademicPeriodServiceRepository(Supabase.instance.client),
     ).execute();
     if (activePeriod == null) return;
-    setState(() => _activePeriod = activePeriod);
-    _fetchStudents(activePeriod);
+    if (mounted) {
+      setState(() => _activePeriod = activePeriod);
+      _fetchStudents(activePeriod);
+    }
   }
 
   Future<void> _fetchStudents(AcademicYear activePeriod) async {
@@ -59,7 +61,9 @@ class _HomeScreenState extends State<HomeScreen> {
         email: userEmail,
       ),
     );
-    Provider.of<StudentProvider>(context, listen: false).setStudents(enrollments);
+    if (mounted) {
+      Provider.of<StudentProvider>(context, listen: false).setStudents(enrollments);
+    }
   }
 
   void _onItemTapped(int index) {

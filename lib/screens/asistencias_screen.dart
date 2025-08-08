@@ -38,9 +38,10 @@ class _AsistenciasScreenState extends State<AsistenciasScreen> {
       AcademicPeriodServiceRepository(Supabase.instance.client),
     ).execute();
     if (activePeriod == null) return;
-    if (!mounted) return;
-    setState(() => _activePeriod = activePeriod);
-    _fetchTimelineItems();
+    if (mounted) {
+      setState(() => _activePeriod = activePeriod);
+      _fetchTimelineItems();
+    }
   }
 
   Future<void> _fetchTimelineItems() async {
@@ -58,8 +59,9 @@ class _AsistenciasScreenState extends State<AsistenciasScreen> {
       enrollmentId: currentStudent.enrollment.id,
       date: _selectedDate,
     );
-    if (!mounted) return;
-    setState(() => _timelineItems = events);
+    if (mounted) {
+      setState(() => _timelineItems = events);
+    }
   }
 
   @override

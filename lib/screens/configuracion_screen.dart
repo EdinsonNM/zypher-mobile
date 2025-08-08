@@ -2,10 +2,29 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:zypher/core/providers/theme_provider.dart';
 import 'package:zypher/core/providers/student_provider.dart';
+import 'package:zypher/services/supabase_service.dart';
 import 'dashboard/components/student_profile_card.dart';
 
 class ConfiguracionScreen extends StatelessWidget {
   const ConfiguracionScreen({super.key});
+
+  Future<void> _signOut(BuildContext context) async {
+    try {
+      await SupabaseService.signOut();
+      if (context.mounted) {
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          '/login',
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al cerrar sesión: $e')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +45,6 @@ class ConfiguracionScreen extends StatelessWidget {
     }
 
     return Scaffold(
-    
       body: ListView(
         children: [
           // Perfil real del estudiante
@@ -109,6 +127,16 @@ class ConfiguracionScreen extends StatelessWidget {
                 }
               },
             ),
+          ),
+          const Divider(),
+          // Opción de cerrar sesión
+          ListTile(
+            leading: const Icon(Icons.logout, color: Colors.red),
+            title: const Text(
+              'Cerrar Sesión',
+              style: TextStyle(color: Colors.red),
+            ),
+            onTap: () => _signOut(context),
           ),
         ],
       ),
