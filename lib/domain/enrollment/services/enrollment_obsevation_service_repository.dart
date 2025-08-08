@@ -27,4 +27,12 @@ class EnrollmentObservationServiceRepository
 
     return observations;
   }
+
+  @override
+  Future<List<EnrollmentObservation>> getObservationsByEnrollmentId({
+    required String enrollmentId,
+  }) async {
+    final response = await client.from('enrollment_observations').select('*').eq('enrollment_id', enrollmentId);
+    return response.map((e) => EnrollmentObservation.fromJson(e)).toList();
+  }
 }

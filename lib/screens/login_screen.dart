@@ -39,6 +39,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     return Scaffold(
       body: Stack(
         children: [
@@ -55,7 +57,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 margin: const EdgeInsets.symmetric(horizontal: 24),
                 padding: const EdgeInsets.all(32),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.95),
+                  color: theme.cardColor.withOpacity(0.95),
                   borderRadius: BorderRadius.circular(32),
                   boxShadow: [
                     BoxShadow(
@@ -78,7 +80,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: GoogleFonts.montserrat(
                         fontSize: 24,
                         fontWeight: FontWeight.w500,
-                        color: Colors.black87,
+                        color: theme.textTheme.titleLarge?.color ?? colorScheme.onSurface,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -91,7 +93,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             alignment: Alignment.centerLeft,
                             child: Text(
                               'Identificación',
-                              style: GoogleFonts.montserrat(fontSize: 16),
+                              style: GoogleFonts.montserrat(fontSize: 16, color: theme.textTheme.bodyLarge?.color ?? colorScheme.onSurface),
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -103,7 +105,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 borderRadius: BorderRadius.circular(16),
                               ),
                               filled: true,
-                              fillColor: Colors.grey[100],
+                              fillColor: theme.inputDecorationTheme.fillColor ?? colorScheme.surface,
                             ),
                             validator: (value) =>
                                 value?.isEmpty ?? true ? 'Ingrese su identificación' : null,
@@ -113,7 +115,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             alignment: Alignment.centerLeft,
                             child: Text(
                               'Contraseña',
-                              style: GoogleFonts.montserrat(fontSize: 16),
+                              style: GoogleFonts.montserrat(fontSize: 16, color: theme.textTheme.bodyLarge?.color ?? colorScheme.onSurface),
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -125,7 +127,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 borderRadius: BorderRadius.circular(16),
                               ),
                               filled: true,
-                              fillColor: Colors.grey[100],
+                              fillColor: theme.inputDecorationTheme.fillColor ?? colorScheme.surface,
                             ),
                             obscureText: true,
                             validator: (value) => value?.isEmpty ?? true
@@ -165,7 +167,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               'Olvidé mi contraseña',
                               style: GoogleFonts.montserrat(
                                 fontSize: 16,
-                                color: Colors.black54,
+                                color: colorScheme.onSurface.withOpacity(0.7),
                                 decoration: TextDecoration.underline,
                               ),
                             ),

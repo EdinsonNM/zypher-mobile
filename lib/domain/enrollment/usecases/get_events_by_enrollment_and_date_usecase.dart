@@ -5,7 +5,6 @@ import 'package:zypher/domain/enrollment/models/enrollment_attendance.dart';
 import 'package:zypher/domain/enrollment/models/enrollment_event.dart';
 import 'package:zypher/domain/enrollment/repositories/enrollment_obsevation_repository.dart';
 import 'package:zypher/domain/enrollment/repositories/enrollment_attendance_repository.dart';
-import 'package:zypher/domain/enrollment/models/enrollment_observation.dart';
 
 class GetEventsByEnrollmentAndDateUseCase {
   final EnrollmentObservationRepository observationRepository;

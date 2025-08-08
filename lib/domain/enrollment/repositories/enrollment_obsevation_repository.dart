@@ -5,4 +5,7 @@ abstract class EnrollmentObservationRepository {
     required String enrollmentId,
     required DateTime date,
   });
+  Future<List<EnrollmentObservation>> getObservationsByEnrollmentId({
+    required String enrollmentId,
+  });
 }

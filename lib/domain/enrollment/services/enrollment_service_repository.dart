@@ -8,7 +8,7 @@ import '../repositories/enrollment_repository.dart';
 class SupabaseEnrollmentRepository implements EnrollmentRepository {
   final SupabaseClient client;
 
-  SupabaseEnrollmentRepository(SupabaseClient this.client);
+  SupabaseEnrollmentRepository(this.client);
 
   @override
   Future<List<EnrollmentWithRelations>> getEnrollmentsByGuardian({
