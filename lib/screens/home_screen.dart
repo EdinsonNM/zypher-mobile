@@ -10,6 +10,7 @@ import 'package:zypher/screens/dashboard_screen.dart';
 import 'package:zypher/core/constants/dashboard_colors.dart';
 
 import 'asistencias_screen.dart';
+import 'eventos_screen.dart';
 import 'observaciones_screen.dart';
 import 'configuracion_screen.dart';
 import 'package:provider/provider.dart';
@@ -30,8 +31,8 @@ class _HomeScreenState extends State<HomeScreen> {
   final List<Widget> _screens = [
     DashboardScreen(),
     AsistenciasScreen(),
+    EventosScreen(),
     ObservacionesScreen(),
-    ObservacionesScreen(), // Placeholder para Eventos
     ConfiguracionScreen(),
   ];
 
@@ -69,9 +70,28 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+    if (_selectedIndex != index) {
+      setState(() {
+        _selectedIndex = index;
+      });
+    }
+  }
+
+  String _getScreenTitle(int index) {
+    switch (index) {
+      case 0:
+        return 'Inicio';
+      case 1:
+        return 'Asistencia';
+      case 2:
+        return 'Eventos';
+      case 3:
+        return 'Observaciones';
+      case 4:
+        return 'Ajustes';
+      default:
+        return '';
+    }
   }
 
   @override
@@ -80,13 +100,27 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: isDark ? DashboardColors.mainBackground : Colors.white,
       appBar: AppBar(
-        backgroundColor: isDark ? DashboardColors.mainBackground : Colors.white,
-        title: Text(
-          'Zypher',
-          style: TextStyle(
-            color: isDark ? DashboardColors.primaryText : const Color(0xFF0F172A),
-            fontWeight: FontWeight.w600,
-          ),
+        backgroundColor: isDark ? const Color(0xFF111827) : Colors.white,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Zypher',
+              style: TextStyle(
+                color: isDark ? DashboardColors.primaryText : const Color(0xFF0F172A),
+                fontWeight: FontWeight.w600,
+                fontSize: 18,
+              ),
+            ),
+            Text(
+              _getScreenTitle(_selectedIndex),
+              style: TextStyle(
+                color: isDark ? DashboardColors.secondaryText : const Color(0xFF6B7280),
+                fontWeight: FontWeight.w400,
+                fontSize: 14,
+              ),
+            ),
+          ],
         ),
         actions: [
           Consumer<StudentProvider>(
@@ -186,36 +220,70 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       body: _screens[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        selectedItemColor: DashboardColors.accentBlue,
-        unselectedItemColor: DashboardColors.tertiaryText,
-        backgroundColor: isDark ? DashboardColors.mainBackground : Colors.white,
-        type: BottomNavigationBarType.fixed,
-        elevation: 8,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Inicio',
+      bottomNavigationBar: _buildBottomNavigation(),
+    );
+  }
+
+  Widget _buildBottomNavigation() {
+    return Container(
+      color: const Color(0xFF1F2937), // bg-gray-800
+      child: SafeArea(
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: const BoxDecoration(
+            border: Border(
+              top: BorderSide(
+                color: Color(0xFF374151), // border-gray-700
+                width: 1,
+              ),
+            ),
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.check_circle_outline),
-            label: 'Asistencia',
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildNavItem(Icons.home, 'Inicio', _selectedIndex == 0, () => _onItemTapped(0)),
+              _buildNavItem(Icons.check_circle, 'Asistencia', _selectedIndex == 1, () => _onItemTapped(1)),
+              _buildNavItem(Icons.event, 'Eventos', _selectedIndex == 2, () => _onItemTapped(2)),
+              _buildNavItem(Icons.visibility, 'Observac.', _selectedIndex == 3, () => _onItemTapped(3)),
+              _buildNavItem(Icons.settings, 'Ajustes', _selectedIndex == 4, () => _onItemTapped(4)),
+            ],
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.event),
-            label: 'Eventos',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.notifications),
-            label: 'Alertas',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'Ajustes',
-          ),
-        ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavItem(IconData icon, String label, bool isActive, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: isActive ? const Color(0xFF374151).withOpacity(0.3) : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              color: isActive 
+                  ? const Color(0xFF60A5FA) // text-blue-400
+                  : const Color(0xFF9CA3AF), // text-gray-400
+              size: 24,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                color: isActive 
+                    ? const Color(0xFF60A5FA) // text-blue-400
+                    : const Color(0xFF9CA3AF) // text-gray-400
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -1674,7 +1674,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
 
     return Scaffold(
-      backgroundColor: DashboardColors.mainBackground,
+      backgroundColor:const Color(0xFF111827), // 
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(

@@ -2,17 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:zypher/core/constants/tailwind_colors.dart';
 import 'package:zypher/core/providers/student_provider.dart';
-import 'package:zypher/domain/academic/models/academic_year.dart';
-import 'package:zypher/domain/academic/services/academic_service.service.repository.dart';
-import 'package:zypher/domain/academic/usecases/get_active_period_usecase.dart';
 import 'package:zypher/domain/enrollment/models/enrollment.dart';
-import 'package:zypher/domain/enrollment/models/enrollment_event.dart';
-import 'package:zypher/domain/enrollment/services/enrollment_attendance_service_repository.dart';
-import 'package:zypher/domain/enrollment/services/enrollment_obsevation_service_repository.dart';
-import 'package:zypher/domain/enrollment/usecases/get_events_by_enrollment_and_date_usecase.dart';
-import 'package:zypher/domain/enrollment/usecases/get_events_by_enrollment.usecase.dart';
 
 class AsistenciasScreen extends StatefulWidget {
   const AsistenciasScreen({super.key});
@@ -22,148 +13,124 @@ class AsistenciasScreen extends StatefulWidget {
 }
 
 class _AsistenciasScreenState extends State<AsistenciasScreen> {
-  DateTime _selectedDate = DateTime.now();
-  DateTime _selectedWeekStart = DateTime.now();
-  List<EnrollmentEvent> _weeklyEvents = [];
-  AcademicYear? _activePeriod;
+  DateTime _selectedMonth = DateTime.now();
   final supabaseClient = Supabase.instance.client;
 
-  @override
-  void initState() {
-    super.initState();
-    _selectedWeekStart = _getWeekStart(_selectedDate);
-    _fetchActivePeriod();
-  }
-
-  DateTime _getWeekStart(DateTime date) {
-    // Calcular el inicio de semana desde el domingo (weekday 7 = domingo, 1 = lunes)
-    // Si es domingo (weekday = 7), no restar días
-    // Si es lunes (weekday = 1), restar 1 día para llegar al domingo
-    // Si es martes (weekday = 2), restar 2 días para llegar al domingo, etc.
-    final daysToSubtract = date.weekday == 7 ? 0 : date.weekday;
-    return date.subtract(Duration(days: daysToSubtract));
-  }
-
-  Future<void> _fetchActivePeriod() async {
-    final activePeriod = await GetActivePeriodUseCase(
-      AcademicPeriodServiceRepository(Supabase.instance.client),
-    ).execute();
-    if (activePeriod == null) return;
-    if (mounted) {
-      setState(() => _activePeriod = activePeriod);
-      _fetchWeeklyEvents();
-    }
-  }
-
-  Future<void> _fetchWeeklyEvents() async {
-    final studentProvider = Provider.of<StudentProvider>(context, listen: false);
-    final currentStudent = studentProvider.currentStudent;
-    if (currentStudent == null) return;
-
-    // Obtener eventos para toda la semana
-    List<EnrollmentEvent> allWeeklyEvents = [];
-    
-    for (int i = 0; i < 7; i++) {
-      final dayDate = _selectedWeekStart.add(Duration(days: i));
-      final events = await GetEventsByEnrollmentAndDateUseCase(
-        observationRepository: EnrollmentObservationServiceRepository(
-          supabaseClient,
-        ),
-        attendanceRepository: EnrollmentAttendanceServiceRepository(
-          supabaseClient,
-        ),
-      ).execute(
-        enrollmentId: currentStudent.enrollment.id,
-        date: dayDate,
-      );
-      allWeeklyEvents.addAll(events);
-    }
-
-    if (mounted) {
-      setState(() => _weeklyEvents = allWeeklyEvents);
-    }
-  }
-
-  void _navigateWeek(int direction) {
-    setState(() {
-      _selectedWeekStart = _selectedWeekStart.add(Duration(days: 7 * direction));
-      _selectedDate = _selectedWeekStart.add(Duration(days: _selectedDate.weekday - 1));
-    });
-    _fetchWeeklyEvents();
-  }
+  // Datos de ejemplo para el calendario (en un caso real vendrían de la base de datos)
+  final Map<int, String> _attendanceData = {
+    1: 'present',
+    2: 'present',
+    3: 'present',
+    4: 'present',
+    7: 'present',
+    8: 'late',
+    9: 'present',
+    10: 'present',
+    11: 'absent',
+    14: 'present',
+    15: 'present',
+    16: 'present',
+    17: 'present',
+    18: 'present',
+    21: 'present',
+    22: 'present',
+    23: 'late',
+    24: 'present',
+    25: 'present',
+    28: 'present',
+    29: 'present',
+    30: 'present',
+    31: 'absent',
+  };
 
   @override
   Widget build(BuildContext context) {
     final studentProvider = Provider.of<StudentProvider>(context);
     final currentStudent = studentProvider.currentStudent;
-    return Column(
-      children: [
-        // Sección de bienvenida y año académico
-        Container(
-          width: double.infinity,
-          color: Theme.of(context).colorScheme.surface,
-          padding: const EdgeInsets.symmetric(
-            horizontal: 24.0,
-            vertical: 16.0,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                '¡Bienvenido!',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Año Académico - ${_activePeriod?.year ?? "2025"}',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withOpacity(0.7),
-                ),
-              ),
-            ],
-          ),
-        ),
-        Expanded(
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
+    
+    return Scaffold(
+      backgroundColor: const Color(0xFF111827), // bg-gray-900
+      body: Column(
+        children: [
+
+          
+          // Contenido principal
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  if (currentStudent != null) _buildStudentHeader(currentStudent, studentProvider),
+                  if (currentStudent != null) _buildStudentInfo(currentStudent),
+                  const SizedBox(height: 24),
+                  _buildMonthlyCalendar(),
+                  const SizedBox(height: 24),
+                  _buildMonthlySummary(),
                   const SizedBox(height: 16),
-                  _buildWeeklyCalendar(),
-                  const SizedBox(height: 16),
-                  _buildWeeklyTimeline(),
+                  _buildDetailedReportButton(),
                 ],
               ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
-  Widget _buildStudentHeader(EnrollmentWithRelations studentEnrollment, StudentProvider studentProvider) {
-    final student = studentEnrollment.student;
-    final grade = studentEnrollment.grade;
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      color: const Color(0xFF111827), // bg-gray-900
+      child: SafeArea(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const SizedBox(width: 48), // Espacio para centrar el título
+            const Text(
+              'Asistencia',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            IconButton(
+              onPressed: () {
+                // Mostrar selector de fecha
+                _showDatePicker();
+              },
+              icon: const Icon(
+                Icons.calendar_today,
+                color: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStudentInfo(EnrollmentWithRelations enrollment) {
+    final student = enrollment.student;
+    final grade = enrollment.grade;
+    
     return Row(
       children: [
-        IconButton(
-          icon: const Icon(Icons.chevron_left),
-          onPressed: studentProvider.currentIndex > 0
-              ? () => studentProvider.changeStudent(studentProvider.currentIndex - 1)
-              : null,
-        ),
         CircleAvatar(
-          radius: 24,
-          backgroundImage: student.thumbnail != null ? NetworkImage(student.thumbnail!) : null,
+          radius: 32,
+          backgroundImage: student.thumbnail != null 
+              ? NetworkImage(student.thumbnail!) 
+              : null,
+          backgroundColor: student.thumbnail == null 
+              ? Colors.grey[600] 
+              : null,
           child: student.thumbnail == null
               ? Text(
                   '${student.firstName.isNotEmpty ? student.firstName[0] : ''}${student.lastName.isNotEmpty ? student.lastName[0] : ''}',
-                  style: const TextStyle(color: Colors.white),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 )
               : null,
         ),
@@ -174,258 +141,355 @@ class _AsistenciasScreenState extends State<AsistenciasScreen> {
             children: [
               Text(
                 '${student.firstName} ${student.lastName}',
-                style: Theme.of(context).textTheme.titleLarge,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
               Text(
                 '${grade.level.toString().split('.').last} / ${grade.name}',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF9CA3AF), // text-gray-400
                 ),
               ),
             ],
           ),
         ),
-        IconButton(
-          icon: const Icon(Icons.chevron_right),
-          onPressed: studentProvider.currentIndex < studentProvider.students.length - 1
-              ? () => studentProvider.changeStudent(studentProvider.currentIndex + 1)
-              : null,
+      ],
+    );
+  }
+
+  Widget _buildMonthlyCalendar() {
+    final monthName = DateFormat('MMMM yyyy', 'es').format(_selectedMonth);
+    final firstDayOfMonth = DateTime(_selectedMonth.year, _selectedMonth.month, 1);
+    final lastDayOfMonth = DateTime(_selectedMonth.year, _selectedMonth.month + 1, 0);
+    final firstWeekday = firstDayOfMonth.weekday; // 1 = lunes, 7 = domingo
+    
+    // Ajustar para que la semana empiece en lunes
+    final adjustedFirstWeekday = firstWeekday == 7 ? 0 : firstWeekday - 1;
+    
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1F2937), // bg-gray-800
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+          // Header del mes con navegación
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                monthName,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+              Row(
+                children: [
+                  IconButton(
+                    onPressed: () => _changeMonth(-1),
+                    icon: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF374151), // bg-gray-700
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Icon(
+                        Icons.chevron_left,
+                        size: 16,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => _changeMonth(1),
+                    icon: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF374151), // bg-gray-700
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Icon(
+                        Icons.chevron_left,
+                        size: 16,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          
+          // Días de la semana
+          Row(
+            children: ['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((day) => 
+              Expanded(
+                child: Text(
+                  day,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF9CA3AF), // text-gray-400
+                  ),
+                ),
+              )
+            ).toList(),
+          ),
+          const SizedBox(height: 8),
+          
+          // Calendario
+          _buildCalendarGrid(adjustedFirstWeekday, lastDayOfMonth.day),
+          
+          // Leyenda
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildLegendItem('Presente', const Color(0xFF10B981)), // bg-green-500
+              _buildLegendItem('Ausente', const Color(0xFFEF4444)), // bg-red-500
+              _buildLegendItem('Tardanza', const Color(0xFFF59E0B)), // bg-yellow-500
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCalendarGrid(int firstWeekday, int lastDay) {
+    final totalCells = firstWeekday + lastDay;
+    final rows = (totalCells / 7).ceil();
+    
+    return Column(
+      children: List.generate(rows, (rowIndex) {
+        return Row(
+          children: List.generate(7, (colIndex) {
+            final cellIndex = rowIndex * 7 + colIndex;
+            final dayNumber = cellIndex - firstWeekday + 1;
+            
+            if (cellIndex < firstWeekday || dayNumber > lastDay) {
+              // Celda vacía
+              return Expanded(
+                child: Container(
+                  height: 40,
+                  margin: const EdgeInsets.all(2),
+                ),
+              );
+            }
+            
+            final attendanceStatus = _attendanceData[dayNumber];
+            Color backgroundColor;
+            Color textColor = Colors.white;
+            
+            switch (attendanceStatus) {
+              case 'present':
+                backgroundColor = const Color(0xFF10B981); // bg-green-500
+                break;
+              case 'absent':
+                backgroundColor = const Color(0xFFEF4444); // bg-red-500
+                break;
+              case 'late':
+                backgroundColor = const Color(0xFFF59E0B); // bg-yellow-500
+                break;
+              default:
+                backgroundColor = Colors.transparent;
+                textColor = Colors.white;
+            }
+            
+            return Expanded(
+              child: Container(
+                height: 40,
+                margin: const EdgeInsets.all(2),
+                decoration: BoxDecoration(
+                  color: backgroundColor,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Center(
+                  child: Text(
+                    dayNumber.toString(),
+                    style: TextStyle(
+                      color: textColor,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }),
+        );
+      }),
+    );
+  }
+
+  Widget _buildLegendItem(String label, Color color) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(6),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12,
+            color: Colors.white,
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildWeeklyCalendar() {
-    final weekDays = List.generate(7, (i) => _selectedWeekStart.add(Duration(days: i)));
-    final weekEnd = _selectedWeekStart.add(const Duration(days: 6));
+  Widget _buildMonthlySummary() {
+    // Calcular estadísticas
+    final presentDays = _attendanceData.values.where((status) => status == 'present').length;
+    final absentDays = _attendanceData.values.where((status) => status == 'absent').length;
+    final lateDays = _attendanceData.values.where((status) => status == 'late').length;
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Resumen del Mes',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF9CA3AF), // text-gray-400
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1F2937), // bg-gray-800
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            children: [
+              _buildSummaryRow(
+                Icons.check_circle,
+                'Asistencias',
+                '$presentDays días',
+                const Color(0xFF34D399), // text-green-400
+              ),
+              const SizedBox(height: 12),
+              _buildSummaryRow(
+                Icons.cancel,
+                'Inasistencias',
+                '$absentDays días',
+                const Color(0xFFF87171), // text-red-400
+              ),
+              const SizedBox(height: 12),
+              _buildSummaryRow(
+                Icons.watch_later,
+                'Tardanzas',
+                '$lateDays días',
+                const Color(0xFFFBBF24), // text-yellow-400
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
+  Widget _buildSummaryRow(IconData icon, String label, String value, Color iconColor) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    '${DateFormat('d MMM', 'es').format(_selectedWeekStart)} - ${DateFormat('d MMM', 'es').format(weekEnd)}',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                ),
-                Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.chevron_left),
-                      onPressed: () => _navigateWeek(-1),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.chevron_right),
-                      onPressed: () => _navigateWeek(1),
-                    ),
-                  ],
-                ),
-              ],
+            Icon(
+              icon,
+              color: iconColor,
+              size: 20,
             ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: weekDays.map((day) {
-                final isSelected = _selectedDate.day == day.day && 
-                                 _selectedDate.month == day.month && 
-                                 _selectedDate.year == day.year;
-                final hasEvents = _weeklyEvents.any((event) => 
-                  event.date.day == day.day && 
-                  event.date.month == day.month && 
-                  event.date.year == day.year
-                );
-                
-                return InkWell(
-                  onTap: () => setState(() {
-                    _selectedDate = day;
-                  }),
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? Theme.of(context).primaryColor
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(8),
-                      border: hasEvents ? Border.all(
-                        color: Theme.of(context).primaryColor.withOpacity(0.5),
-                        width: 1,
-                      ) : null,
-                    ),
-                    child: Column(
-                      children: [
-                        Text(
-                          DateFormat('EEE', 'es').format(day)[0],
-                          style: TextStyle(
-                            color: isSelected ? Colors.white : null,
-                            fontWeight: hasEvents ? FontWeight.bold : FontWeight.normal,
-                          ),
-                        ),
-                        Text(
-                          day.day.toString(),
-                          style: TextStyle(
-                            color: isSelected ? Colors.white : null,
-                            fontWeight: hasEvents ? FontWeight.bold : FontWeight.normal,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }).toList(),
+            const SizedBox(width: 12),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+              ),
             ),
           ],
+        ),
+        Text(
+          value,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDetailedReportButton() {
+    return Center(
+      child: TextButton(
+        onPressed: () {
+          // Navegar al reporte detallado
+        },
+        child: const Text(
+          'Ver reporte detallado',
+          style: TextStyle(
+            color: Color(0xFF60A5FA), // text-blue-400
+            fontWeight: FontWeight.w500,
+            fontSize: 14,
+          ),
         ),
       ),
     );
   }
 
-  // Convierte un color de Tailwind a un color de Dart
-  Color _getTailwindColor(String tailwindColor) {
-    return TailwindColors.getTailwindColor(tailwindColor);
+  void _changeMonth(int direction) {
+    setState(() {
+      _selectedMonth = DateTime(
+        _selectedMonth.year,
+        _selectedMonth.month + direction,
+        1,
+      );
+    });
   }
 
-  Widget _buildWeeklyTimeline() {
-    // Filtrar eventos solo para la semana seleccionada
-    final weekEvents = _weeklyEvents.where((event) {
-      final eventDate = DateTime(event.date.year, event.date.month, event.date.day);
-      final weekStart = _selectedWeekStart;
-      final weekEnd = _selectedWeekStart.add(const Duration(days: 6));
-      return eventDate.isAfter(weekStart.subtract(const Duration(days: 1))) && 
-             eventDate.isBefore(weekEnd.add(const Duration(days: 1)));
-    }).toList();
-
-    // Ordenar eventos por fecha y hora
-    weekEvents.sort((a, b) => a.date.compareTo(b.date));
-
-    if (weekEvents.isEmpty) {
-      return Card(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            children: [
-              Icon(
-                Icons.event_note,
-                size: 48,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'No hay eventos esta semana',
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0),
-          child: Text(
-            'Historial de la semana',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
+  void _showDatePicker() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedMonth,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.dark(
+              primary: Color(0xFF60A5FA),
+              surface: Color(0xFF1F2937),
             ),
           ),
-        ),
-        ...weekEvents.map((EnrollmentEvent item) {
-          final isToday = DateTime.now().day == item.date.day && 
-                         DateTime.now().month == item.date.month && 
-                         DateTime.now().year == item.date.year;
-          
-          return Card(
-            margin: const EdgeInsets.only(bottom: 8),
-            child: ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: _getTailwindColor(item.color).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  item.type == 'attendance' && item.title == 'Asistió'
-                      ? Icons.check_circle
-                      : Icons.error,
-                  color: _getTailwindColor(item.color),
-                  size: 20,
-                ),
-              ),
-              title: Text(
-                item.title,
-                style: TextStyle(
-                  fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
-                ),
-              ),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.description,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.calendar_today,
-                        size: 12,
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        DateFormat('EEEE, d MMM', 'es').format(item.date),
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              trailing: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    DateFormat('hh:mm a').format(item.date),
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: isToday ? Theme.of(context).primaryColor : null,
-                    ),
-                  ),
-                  if (isToday)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).primaryColor,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Text(
-                        'HOY',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          );
-        }).toList(),
-      ],
+          child: child!,
+        );
+      },
     );
+    
+    if (picked != null) {
+      setState(() {
+        _selectedMonth = DateTime(picked.year, picked.month, 1);
+      });
+    }
   }
 }
