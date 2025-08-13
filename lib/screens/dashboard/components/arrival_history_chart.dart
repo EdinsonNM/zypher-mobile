@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:zypher/core/constants/dashboard_colors.dart';
 
 class ArrivalHistoryChart extends StatefulWidget {
   const ArrivalHistoryChart({Key? key}) : super(key: key);
@@ -40,7 +41,7 @@ class _ArrivalHistoryChartState extends State<ArrivalHistoryChart> with SingleTi
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
+            color: DashboardColors.cardBackground,
             borderRadius: BorderRadius.circular(16),
           ),
           child: Theme(
@@ -56,12 +57,12 @@ class _ArrivalHistoryChartState extends State<ArrivalHistoryChart> with SingleTi
               isScrollable: false,
               indicatorSize: TabBarIndicatorSize.tab,
               indicator: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.15),
+                color: DashboardColors.accentBlue.withOpacity(0.15),
                 borderRadius: BorderRadius.circular(12),
               ),
               indicatorColor: Colors.transparent,
-              labelColor: Theme.of(context).colorScheme.primary,
-              unselectedLabelColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              labelColor: DashboardColors.accentBlue,
+              unselectedLabelColor: DashboardColors.tertiaryText,
               labelStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               unselectedLabelStyle: const TextStyle(fontSize: 16),
               tabs: _tabs.map((e) => Tab(text: e)).toList(),

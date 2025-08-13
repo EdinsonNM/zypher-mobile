@@ -7,6 +7,7 @@ import 'package:zypher/domain/enrollment/dtos/get_enrollments_by_guardian_dto.da
 import 'package:zypher/domain/enrollment/services/enrollment_service_repository.dart';
 import 'package:zypher/domain/enrollment/usecases/get_enrollments_by_guardian_usecase.dart';
 import 'package:zypher/screens/dashboard_screen.dart';
+import 'package:zypher/core/constants/dashboard_colors.dart';
 
 import 'asistencias_screen.dart';
 import 'observaciones_screen.dart';
@@ -30,6 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
     DashboardScreen(),
     AsistenciasScreen(),
     ObservacionesScreen(),
+    ObservacionesScreen(), // Placeholder para Eventos
     ConfiguracionScreen(),
   ];
 
@@ -74,9 +76,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
+      backgroundColor: isDark ? DashboardColors.mainBackground : Colors.white,
       appBar: AppBar(
-        title: Text('Zypher'),
+        backgroundColor: isDark ? DashboardColors.mainBackground : Colors.white,
+        title: Text(
+          'Zypher',
+          style: TextStyle(
+            color: isDark ? DashboardColors.primaryText : const Color(0xFF0F172A),
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         actions: [
           Consumer<StudentProvider>(
             builder: (context, studentProvider, _) {
@@ -133,14 +144,40 @@ class _HomeScreenState extends State<HomeScreen> {
                       },
                     );
                   },
-                  child: CircleAvatar(
-                    backgroundImage: student.thumbnail != null ? NetworkImage(student.thumbnail!) : null,
-                    child: student.thumbnail == null
-                        ? Text(
-                            '${student.firstName.isNotEmpty ? student.firstName[0] : ''}${student.lastName.isNotEmpty ? student.lastName[0] : ''}',
-                           
-                          )
-                        : null,
+                  child: Stack(
+                    children: [
+                      CircleAvatar(
+                        backgroundImage: student.thumbnail != null ? NetworkImage(student.thumbnail!) : null,
+                        child: student.thumbnail == null
+                            ? Text(
+                                '${student.firstName.isNotEmpty ? student.firstName[0] : ''}${student.lastName.isNotEmpty ? student.lastName[0] : ''}',
+                                style: TextStyle(
+                                  color: DashboardColors.primaryText,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              )
+                            : null,
+                      ),
+                      Positioned(
+                        top: 0,
+                        right: 0,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            'DEBUG',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 8,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               );
@@ -152,25 +189,31 @@ class _HomeScreenState extends State<HomeScreen> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
-        selectedItemColor: Theme.of(context).bottomNavigationBarTheme.selectedItemColor,
-        unselectedItemColor: Theme.of(context).bottomNavigationBarTheme.unselectedItemColor,
-        backgroundColor: Theme.of(context).bottomNavigationBarTheme.backgroundColor,
+        selectedItemColor: DashboardColors.accentBlue,
+        unselectedItemColor: DashboardColors.tertiaryText,
+        backgroundColor: isDark ? DashboardColors.mainBackground : Colors.white,
+        type: BottomNavigationBarType.fixed,
+        elevation: 8,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
-            label: 'Home',
+            label: 'Inicio',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.check_circle_outline),
-            label: 'Asistencias',
+            label: 'Asistencia',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.visibility),
-            label: 'Observaciones',
+            icon: Icon(Icons.event),
+            label: 'Eventos',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.notifications),
+            label: 'Alertas',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.settings),
-            label: 'Configuración',
+            label: 'Ajustes',
           ),
         ],
       ),

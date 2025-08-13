@@ -11,13 +11,17 @@ import 'package:zypher/domain/enrollment/usecases/get_events_by_enrollment_and_d
 
 import '../domain/enrollment/models/enrollment.dart';
 import 'package:zypher/core/constants/tailwind_colors.dart';
+import 'package:zypher/core/constants/dashboard_colors.dart';
 import 'package:provider/provider.dart';
 import '../core/providers/student_provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'dashboard/components/student_header.dart';
 import 'dashboard/components/arrival_history_chart.dart';
-import 'dashboard/components/stat_card.dart';
-import 'dashboard/components/activity_list.dart';
+import 'dashboard/components/observations_card.dart';
+import 'dashboard/components/notifications_card.dart';
+import 'dashboard/components/upcoming_events_card.dart';
+import 'dashboard/components/pending_payments_card.dart';
+import 'dashboard/components/dashboard_modals.dart';
 
 class DashboardScreen extends StatefulWidget {
   @override
@@ -30,27 +34,42 @@ class _DashboardScreenState extends State<DashboardScreen> {
   AcademicYear? _activePeriod;
   
   // Variables para estadísticas relevantes para padres
-  double _attendancePercentage = 0.0;
   int _recentObservations = 0;
   int _upcomingParentEvents = 0;
   int _pendingPayments = 0;
   bool _isLoadingStats = false;
+  
+  // Datos reales del dashboard
+  List<Map<String, String>> _observations = [];
+  List<Map<String, String>> _notifications = [];
+  List<Map<String, String>> _upcomingEvents = [];
+  List<Map<String, String>> _pendingPaymentsList = [];
   
   final supabaseClient = Supabase.instance.client;
 
   @override
   void initState() {
     super.initState();
+    print('=== DashboardScreen initState ===');
     _fetchActivePeriod();
   }
 
   Future<void> _fetchActivePeriod() async {
+    print('=== _fetchActivePeriod started ===');
     final activePeriod = await GetActivePeriodUseCase(
       AcademicPeriodServiceRepository(Supabase.instance.client),
     ).execute();
-    if (activePeriod == null) return;
+    
+    print('Active period result: ${activePeriod?.name}');
+    
+    if (activePeriod == null) {
+      print('No active period found, returning early');
+      return;
+    }
+    
     if (mounted) {
       setState(() => _activePeriod = activePeriod);
+      print('Active period set, calling _fetchTimelineItems and _fetchAllStats');
       _fetchTimelineItems();
       _fetchAllStats();
     }
@@ -77,9 +96,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _fetchAllStats() async {
+    print('=== STARTING _fetchAllStats ===');
+    
     final studentProvider = Provider.of<StudentProvider>(context, listen: false);
     final currentStudent = studentProvider.currentStudent;
-    if (currentStudent == null || _activePeriod == null) return;
+    
+    print('Student provider found: ${studentProvider != null}');
+    print('Current student: ${currentStudent?.enrollment.id}');
+    print('Active period: ${_activePeriod?.name}');
+    
+    if (currentStudent == null || _activePeriod == null) {
+      print('Early return: currentStudent=${currentStudent != null}, _activePeriod=${_activePeriod != null}');
+      return;
+    }
 
     if (mounted) {
       setState(() => _isLoadingStats = true);
@@ -89,58 +118,44 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final startDate = _activePeriod!.startDate ?? DateTime.now().subtract(const Duration(days: 30));
       final endDate = _activePeriod!.endDate ?? DateTime.now();
       
+      print('Date range: $startDate to $endDate');
+      print('Starting parallel execution...');
+      
       // Ejecutar todas las consultas en paralelo
       await Future.wait([
-        _fetchAttendancePercentage(currentStudent.enrollment.id, startDate, endDate),
         _fetchRecentObservations(currentStudent.enrollment.id, startDate, endDate),
         _fetchUpcomingParentEvents(currentStudent.enrollment.id),
         _fetchPendingPayments(currentStudent.enrollment.id),
+        _fetchObservationsData(currentStudent.enrollment.id, startDate, endDate),
+        _fetchNotificationsData(currentStudent.enrollment.id),
+        _fetchUpcomingEventsData(currentStudent.enrollment.id),
+        _fetchPendingPaymentsData(currentStudent.enrollment.id),
       ]);
 
+      print('All functions completed successfully!');
+      print('Final stats:');
+      print('- Recent observations: $_recentObservations');
+      print('- Upcoming parent events: $_upcomingParentEvents');
+      print('- Pending payments: $_pendingPayments');
+      print('- Observations data: ${_observations.length}');
+      print('- Notifications data: ${_notifications.length}');
+      print('- Upcoming events data: ${_upcomingEvents.length}');
+      print('- Pending payments data: ${_pendingPaymentsList.length}');
+
       if (mounted) {
         setState(() => _isLoadingStats = false);
       }
     } catch (e) {
-      print('Error fetching dashboard stats: $e');
+      print('Error in _fetchAllStats: $e');
+      print('Stack trace: ${StackTrace.current}');
       if (mounted) {
         setState(() => _isLoadingStats = false);
       }
-    }
-  }
-
-  Future<void> _fetchAttendancePercentage(String enrollmentId, DateTime startDate, DateTime endDate) async {
-    try {
-      // Contar días totales con registro de asistencia
-      final totalResponse = await supabaseClient
-          .from('enrollment_attendances')
-          .select('id')
-          .eq('enrollment_id', enrollmentId)
-          .gte('date', startDate.toIso8601String().split('T')[0])
-          .lte('date', endDate.toIso8601String().split('T')[0]);
-
-      // Contar días presentes
-      final presentResponse = await supabaseClient
-          .from('enrollment_attendances')
-          .select('id')
-          .eq('enrollment_id', enrollmentId)
-          .eq('status', 'present')
-          .gte('date', startDate.toIso8601String().split('T')[0])
-          .lte('date', endDate.toIso8601String().split('T')[0]);
-
-      final totalDays = totalResponse.length;
-      final presentDays = presentResponse.length;
-
-      if (mounted) {
-        setState(() {
-          _attendancePercentage = totalDays > 0 ? (presentDays / totalDays) * 100 : 0.0;
-        });
-      }
-    } catch (e) {
-      print('Error fetching attendance: $e');
     }
   }
 
   Future<void> _fetchRecentObservations(String enrollmentId, DateTime startDate, DateTime endDate) async {
+    print('>>> _fetchRecentObservations started');
     try {
       // Contar observaciones recientes (últimos 30 días)
       final response = await supabaseClient
@@ -150,6 +165,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           .gte('date', startDate.toIso8601String().split('T')[0])
           .lte('date', endDate.toIso8601String().split('T')[0])
           .order('created_at', ascending: false);
+
+      print('>>> _fetchRecentObservations: Found ${response.length} observations');
 
       if (mounted) {
         setState(() => _recentObservations = response.length);
@@ -163,16 +180,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _fetchUpcomingParentEvents(String enrollmentId) async {
+    print('>>> _fetchUpcomingParentEvents started');
     try {
       // Buscar eventos de escuela de padres próximos
       final now = DateTime.now();
       final response = await supabaseClient
           .from('parent_school_events')
           .select('id, name, event_date, status')
-          .gte('event_date', now.toIso8601String())
-          .eq('status', 'scheduled')
+          //.gte('event_date', now.toIso8601String())
+          //.eq('status', 'scheduled')
           .order('event_date', ascending: true)
           .limit(5);
+
+      print('>>> _fetchUpcomingParentEvents: Found ${response.length} events');
 
       if (mounted) {
         setState(() => _upcomingParentEvents = response.length);
@@ -262,120 +282,365 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  // Nuevas funciones para obtener datos reales
+  Future<void> _fetchObservationsData(String enrollmentId, DateTime startDate, DateTime endDate) async {
+    print('>>> _fetchObservationsData started');
+    try {
+      final response = await supabaseClient
+          .from('enrollment_observations')
+          .select('''
+            title,
+            description,
+            severity,
+            date,
+            observation_categories(name)
+          ''')
+          .eq('enrollment_id', enrollmentId)
+          .gte('date', startDate.toIso8601String().split('T')[0])
+          .lte('date', endDate.toIso8601String().split('T')[0])
+          .order('created_at', ascending: false)
+          .limit(3);
+
+      print('>>> _fetchObservationsData: Found ${response.length} observations');
+
+      if (mounted) {
+        setState(() {
+          _observations = response.map((obs) => {
+            'text': obs['title']?.toString() ?? 'Sin título',
+            'teacher': obs['observation_categories']?['name']?.toString() ?? 'Sin categoría',
+            'severity': obs['severity']?.toString() ?? 'low',
+            'description': obs['description']?.toString() ?? '',
+            'date': obs['date']?.toString() ?? '',
+          }).toList();
+        });
+      }
+    } catch (e) {
+      print('Error fetching observations data: $e');
+      if (mounted) {
+        setState(() => _observations = []);
+      }
+    }
+  }
+
+  Future<void> _fetchNotificationsData(String enrollmentId) async {
+    print('>>> _fetchNotificationsData started');
+    try {
+      // Obtener el grado del estudiante para filtrar notificaciones
+      final enrollmentResponse = await supabaseClient
+          .from('enrollments')
+          .select('grade_id')
+          .eq('id', enrollmentId)
+          .single();
+      
+      final gradeId = enrollmentResponse['grade_id'];
+      print('>>> _fetchNotificationsData: Grade ID: $gradeId');
+      
+      final response = await supabaseClient
+          .from('notifications')
+          .select('title, content, created_at, type, grade_ids')
+          .eq('is_active', true)
+          .eq('status', 'created')
+          .or('type.eq.GENERAL,type.eq.BY_GRADE')
+          .order('created_at', ascending: false)
+          .limit(5);
+
+      print('>>> _fetchNotificationsData: Found ${response.length} total notifications');
+      
+      if (mounted) {
+        setState(() {
+          _notifications = response.where((notif) {
+            // Filtrar notificaciones generales o específicas del grado
+            if (notif['type'] == 'GENERAL') return true;
+            if (notif['type'] == 'BY_GRADE') {
+              final gradeIds = notif['grade_ids'] as List?;
+              return gradeIds?.contains(gradeId) ?? false;
+            }
+            return false;
+          }).take(3).map((notif) {
+            final createdAt = DateTime.parse(notif['created_at']);
+            final now = DateTime.now();
+            final difference = now.difference(createdAt);
+            
+            String timeAgo;
+            if (difference.inHours < 1) {
+              timeAgo = 'Hace ${difference.inMinutes} minutos';
+            } else if (difference.inHours < 24) {
+              timeAgo = 'Hace ${difference.inHours} horas';
+            } else {
+              timeAgo = 'Hace ${difference.inDays} días';
+            }
+
+            return {
+              'text': notif['title']?.toString() ?? 'Sin título',
+              'time': timeAgo,
+              'content': notif['content']?.toString() ?? '',
+              'isViewed': 'false',
+            };
+          }).toList();
+        });
+        
+        print('>>> _fetchNotificationsData: Final notifications: ${_notifications.length}');
+      }
+    } catch (e) {
+      print('Error fetching notifications data: $e');
+      if (mounted) {
+        setState(() => _notifications = []);
+      }
+    }
+  }
+
+  Future<void> _fetchUpcomingEventsData(String enrollmentId) async {
+    print('>>> _fetchUpcomingEventsData started');
+    try {
+      print('Fetching upcoming events for enrollment: $enrollmentId');
+      
+      // Obtener el período académico del enrollment actual
+      final enrollmentResponse = await supabaseClient
+          .from('enrollments')
+          .select('academic_period_id')
+          .eq('id', enrollmentId)
+          .single();
+      
+      final academicPeriodId = enrollmentResponse['academic_period_id'];
+      print('>>> _fetchUpcomingEventsData: Academic period ID: $academicPeriodId');
+      
+      // Obtener eventos del período académico del estudiante
+      final response = await supabaseClient
+          .from('parent_school_events')
+          .select('name, event_date, location, description')
+          .eq('academic_period_id', academicPeriodId)
+          .eq('status', 'scheduled')
+          .order('event_date', ascending: true)
+          .limit(3);
+
+      print('>>> _fetchUpcomingEventsData: Found ${response.length} events for academic period $academicPeriodId');
+      for (var event in response) {
+        print('Event: ${event['name']} - Date: ${event['event_date']}');
+      }
+      
+      if (mounted) {
+        setState(() {
+          _upcomingEvents = response.map((event) {
+            final eventDate = DateTime.parse(event['event_date']);
+            final formattedDate = DateFormat('dd \'de\' MMMM', 'es').format(eventDate);
+            
+            return {
+              'text': event['name']?.toString() ?? 'Sin nombre',
+              'date': formattedDate,
+              'location': event['location']?.toString() ?? 'Sin ubicación',
+              'description': event['description']?.toString() ?? '',
+            };
+          }).toList();
+        });
+        
+        print('>>> _fetchUpcomingEventsData: Final events: ${_upcomingEvents.length}');
+      }
+    } catch (e) {
+      print('Error fetching upcoming events data: $e');
+      if (mounted) {
+        setState(() => _upcomingEvents = []);
+      }
+    }
+  }
+
+  Future<void> _fetchPendingPaymentsData(String enrollmentId) async {
+    print('>>> _fetchPendingPaymentsData started');
+    try {
+      if (_activePeriod == null) {
+        print('>>> _fetchPendingPaymentsData: No active period');
+        if (mounted) {
+          setState(() => _pendingPaymentsList = []);
+        }
+        return;
+      }
+
+      final startDate = _activePeriod!.startDate ?? DateTime.now();
+      final endDate = _activePeriod!.endDate ?? DateTime.now();
+      final now = DateTime.now();
+      
+      print('>>> _fetchPendingPaymentsData: Period dates: $startDate to $endDate');
+
+      // Obtener mensualidades pendientes
+      final pendingMonths = <Map<String, String>>[];
+      
+      // Verificar matrícula
+      final matriculaResponse = await supabaseClient
+          .from('enrollment_payments')
+          .select('id')
+          .eq('enrollment_id', enrollmentId)
+          .eq('payment_concept_id', '28e0de26-0beb-471d-bd9b-7f905fcda485')
+          .gte('payment_date', startDate.toIso8601String().split('T')[0])
+          .lte('payment_date', endDate.toIso8601String().split('T')[0]);
+
+      print('>>> _fetchPendingPaymentsData: Matricula payments found: ${matriculaResponse.length}');
+
+      if (matriculaResponse.isEmpty) {
+        pendingMonths.add({
+          'concept': 'Matrícula',
+          'dueDate': 'Pendiente de pago',
+          'amount': 'Por definir',
+        });
+      }
+
+      // Verificar mensualidades
+      final mensualidadesResponse = await supabaseClient
+          .from('enrollment_payments')
+          .select('billing_period')
+          .eq('enrollment_id', enrollmentId)
+          .eq('payment_concept_id', 'c224fd83-3aad-49d4-b622-4cac4f4e450d')
+          .gte('billing_period', startDate.toIso8601String().split('T')[0])
+          .lte('billing_period', endDate.toIso8601String().split('T')[0]);
+
+      print('>>> _fetchPendingPaymentsData: Mensualidades payments found: ${mensualidadesResponse.length}');
+
+      final paidMonths = mensualidadesResponse.map((p) => DateTime.parse(p['billing_period'])).toList();
+      
+      // Calcular meses pendientes
+      DateTime currentMonth = DateTime(now.year, now.month, 1);
+      DateTime periodStart = DateTime(startDate.year, startDate.month, 1);
+      DateTime periodEnd = DateTime(endDate.year, endDate.month, 1);
+
+      while (currentMonth.isBefore(periodEnd) || currentMonth.isAtSameMomentAs(periodEnd)) {
+        if (currentMonth.isAfter(periodStart) || currentMonth.isAtSameMomentAs(periodStart)) {
+          bool isPaid = paidMonths.any((paid) => 
+            paid.year == currentMonth.year && paid.month == currentMonth.month);
+          
+          if (!isPaid) {
+            final monthName = DateFormat('MMMM', 'es').format(currentMonth);
+            pendingMonths.add({
+              'concept': 'Pensión de $monthName',
+              'dueDate': 'Pendiente de pago',
+              'amount': 'Por definir',
+            });
+          }
+        }
+        currentMonth = DateTime(currentMonth.year, currentMonth.month + 1, 1);
+      }
+
+      print('>>> _fetchPendingPaymentsData: Total pending months: ${pendingMonths.length}');
+
+      if (mounted) {
+        setState(() => _pendingPaymentsList = pendingMonths.take(3).toList());
+        print('>>> _fetchPendingPaymentsData: Final pending payments: ${_pendingPaymentsList.length}');
+      }
+    } catch (e) {
+      print('Error fetching pending payments data: $e');
+      if (mounted) {
+        setState(() => _pendingPaymentsList = []);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final studentProvider = Provider.of<StudentProvider>(context);
     final currentStudent = studentProvider.currentStudent;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
+    print('=== DashboardScreen build ===');
+    print('Current student in build: ${currentStudent?.enrollment.id}');
+    print('Active period in build: ${_activePeriod?.name}');
+    print('Is loading stats: $_isLoadingStats');
+    
+    // Si tenemos el estudiante pero no hemos cargado las estadísticas, cargarlas
+    if (currentStudent != null && _activePeriod != null && !_isLoadingStats && _observations.isEmpty) {
+      print('Triggering stats fetch from build...');
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _fetchAllStats();
+      });
+    }
+
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0A0A0A) : Colors.transparent,
-      body: Container(
-        color: isDark ? const Color(0xFF0A0A0A) : const Color(0xFFFAFAFA),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (currentStudent != null)
-                    StudentHeader(
-                      studentEnrollment: currentStudent,
-                      studentProvider: studentProvider,
-                    ),
-                  const SizedBox(height: 24),
-                  Text(
-                    'Historial de Llegada',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: isDark ? Colors.white : const Color(0xFF0F172A),
-                    ),
+      backgroundColor: DashboardColors.mainBackground,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (currentStudent != null)
+                  StudentHeader(
+                    studentEnrollment: currentStudent,
+                    studentProvider: studentProvider,
                   ),
-                  const SizedBox(height: 12),
-                  ArrivalHistoryChart(enrollmentId: currentStudent?.enrollment.id),
-                  const SizedBox(height: 32),
-                  Text(
-                    'Información para Padres',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: isDark ? Colors.white : const Color(0xFF0F172A),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Historial de Llegada',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? Colors.white : const Color(0xFF0F172A),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        StatCard(
-                          title: 'Asistencia',
-                          value: '${_attendancePercentage.toStringAsFixed(1)}%',
-                          icon: Icons.calendar_today,
-                          color: const Color(0xFF3B82F6),
-                          isLoading: _isLoadingStats,
-                          onTap: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Asistencia del período actual')),
-                            );
-                          },
+                    GestureDetector(
+                      onTap: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Ver todo el historial')),
+                        );
+                      },
+                      child: Text(
+                        'Ver todo',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: DashboardColors.accentBlue,
+                          fontWeight: FontWeight.w500,
                         ),
-                        const SizedBox(width: 16),
-                        StatCard(
-                          title: 'Observaciones',
-                          value: _recentObservations.toString(),
-                          icon: Icons.assignment,
-                          color: const Color(0xFFF59E0B),
-                          isLoading: _isLoadingStats,
-                          onTap: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Observaciones recientes del estudiante')),
-                            );
-                          },
-                        ),
-                        const SizedBox(width: 16),
-                        StatCard(
-                          title: 'Eventos Padres',
-                          value: _upcomingParentEvents.toString(),
-                          icon: Icons.event,
-                          color: const Color(0xFF10B981),
-                          isLoading: _isLoadingStats,
-                          onTap: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Próximos eventos de Escuela de Padres')),
-                            );
-                          },
-                        ),
-                        const SizedBox(width: 16),
-                        StatCard(
-                          title: 'Pagos Pendientes',
-                          value: _pendingPayments.toString(),
-                          icon: Icons.payment,
-                          color: const Color(0xFFEF4444),
-                          isLoading: _isLoadingStats,
-                          onTap: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Estado de pagos de la matrícula')),
-                            );
-                          },
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 32),
-                  Text(
-                    'Actividad Reciente',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: isDark ? Colors.white : const Color(0xFF0F172A),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  SizedBox(
-                    height: 300,
-                    child: ActivityList(),
-                  ),
-                ],
-              ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                ArrivalHistoryChart(enrollmentId: currentStudent?.enrollment.id),
+                const SizedBox(height: 32),
+                UpcomingEventsCard(
+                  events: _upcomingEvents.isNotEmpty ? _upcomingEvents : [
+                    {'text': 'No hay eventos próximos', 'date': 'Por el momento'},
+                  ],
+                  onViewAll: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Ver todos los eventos')),
+                    );
+                  },
+                ),
+                const SizedBox(height: 20),
+                NotificationsCard(
+                  notifications: _notifications.isNotEmpty ? _notifications : [
+                    {'text': 'No hay notificaciones', 'time': 'Por el momento'},
+                  ],
+                  onViewAll: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Ver todas las notificaciones')),
+                    );
+                  },
+                ),
+                const SizedBox(height: 20),
+                PendingPaymentsCard(
+                  payments: _pendingPaymentsList.isNotEmpty ? _pendingPaymentsList : [
+                    {'concept': 'No hay pagos pendientes', 'dueDate': 'Todo al día'},
+                  ],
+                  onGoToPay: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Ir a pagar')),
+                    );
+                  },
+                ),
+                const SizedBox(height: 20),
+                ObservationsCard(
+                  observations: _observations.isNotEmpty ? _observations : [
+                    {'text': 'No hay observaciones recientes', 'teacher': 'Por el momento'},
+                  ],
+                  onViewAll: () {
+                    final studentProvider = Provider.of<StudentProvider>(context, listen: false);
+                    final currentStudent = studentProvider.currentStudent;
+                    if (currentStudent != null) {
+                      DashboardModals.showObservationsModal(context, currentStudent.enrollment.id);
+                    }
+                  },
+                ),
+              ],
             ),
           ),
         ),
@@ -396,13 +661,23 @@ class ArrivalHistoryChart extends StatefulWidget {
 class _ArrivalHistoryChartState extends State<ArrivalHistoryChart> {
   List<Map<String, dynamic>> _attendanceData = [];
   bool _isLoading = true;
-  String _selectedPeriod = 'week'; // 'week', 'month', '3months'
+  DateTime _selectedWeekStart = DateTime.now();
   final supabaseClient = Supabase.instance.client;
 
   @override
   void initState() {
     super.initState();
+    _selectedWeekStart = _getWeekStart(DateTime.now());
     _fetchAttendanceData();
+  }
+
+  DateTime _getWeekStart(DateTime date) {
+    // Calcular el inicio de semana desde el domingo (weekday 7 = domingo, 1 = lunes)
+    // Si es domingo (weekday = 7), no restar días
+    // Si es lunes (weekday = 1), restar 1 día para llegar al domingo
+    // Si es martes (weekday = 2), restar 2 días para llegar al domingo, etc.
+    final daysToSubtract = date.weekday == 7 ? 0 : date.weekday;
+    return date.subtract(Duration(days: daysToSubtract));
   }
 
   Future<void> _fetchAttendanceData() async {
@@ -414,30 +689,15 @@ class _ArrivalHistoryChartState extends State<ArrivalHistoryChart> {
     }
 
     try {
-      // Obtener datos de asistencia según el período seleccionado
-      final endDate = DateTime.now();
-      DateTime startDate;
-      
-      switch (_selectedPeriod) {
-        case 'week':
-          startDate = endDate.subtract(const Duration(days: 6));
-          break;
-        case 'month':
-          startDate = DateTime(endDate.year, endDate.month - 1, endDate.day);
-          break;
-        case '3months':
-          startDate = DateTime(endDate.year, endDate.month - 3, endDate.day);
-          break;
-        default:
-          startDate = endDate.subtract(const Duration(days: 6));
-      }
+      // Obtener datos de asistencia para la semana seleccionada
+      final weekEnd = _selectedWeekStart.add(const Duration(days: 6));
       
       final response = await supabaseClient
           .from('enrollment_attendances')
           .select('date, check_in_time, status')
           .eq('enrollment_id', enrollmentId)
-          .gte('date', startDate.toIso8601String().split('T')[0])
-          .lte('date', endDate.toIso8601String().split('T')[0])
+          .gte('date', _selectedWeekStart.toIso8601String().split('T')[0])
+          .lte('date', weekEnd.toIso8601String().split('T')[0])
           .eq('status', 'present')
           .order('date', ascending: true);
 
@@ -455,37 +715,63 @@ class _ArrivalHistoryChartState extends State<ArrivalHistoryChart> {
     }
   }
 
-  void _changePeriod(String period) {
-    if (mounted) {
-      setState(() => _selectedPeriod = period);
-      _fetchAttendanceData();
-    }
+  void _navigateWeek(int direction) {
+    setState(() {
+      _selectedWeekStart = _selectedWeekStart.add(Duration(days: 7 * direction));
+    });
+    _fetchAttendanceData();
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final weekEnd = _selectedWeekStart.add(const Duration(days: 6));
     
     return Container(
       height: 280,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+        color: isDark ? DashboardColors.cardBackground : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFE5E7EB),
+          color: isDark ? DashboardColors.cardBorder : const Color(0xFFE5E7EB),
           width: 1,
         ),
       ),
       child: Column(
         children: [
-          // Selector de período
+          // Header con navegación semanal
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildPeriodButton('Semana', 'week'),
-              _buildPeriodButton('Mes', 'month'),
-              _buildPeriodButton('3 Meses', '3months'),
+              Expanded(
+                child: Text(
+                  '${DateFormat('d MMM', 'es').format(_selectedWeekStart)} - ${DateFormat('d MMM', 'es').format(weekEnd)}',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? DashboardColors.primaryText : const Color(0xFF0F172A),
+                  ),
+                ),
+              ),
+              Row(
+                children: [
+                  IconButton(
+                    icon: Icon(
+                      Icons.chevron_left,
+                      color: isDark ? DashboardColors.primaryText : const Color(0xFF0F172A),
+                    ),
+                    onPressed: () => _navigateWeek(-1),
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      Icons.chevron_right,
+                      color: isDark ? DashboardColors.primaryText : const Color(0xFF0F172A),
+                    ),
+                    onPressed: () => _navigateWeek(1),
+                  ),
+                ],
+              ),
             ],
           ),
           const SizedBox(height: 20),
@@ -494,46 +780,12 @@ class _ArrivalHistoryChartState extends State<ArrivalHistoryChart> {
             child: _isLoading
                 ? Center(
                     child: CircularProgressIndicator(
-                      color: isDark ? Colors.white : const Color(0xFF3B82F6),
+                      color: isDark ? DashboardColors.primaryText : const Color(0xFF3B82F6),
                     ),
                   )
                 : _buildBarChart(),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildPeriodButton(String label, String period) {
-    final isSelected = _selectedPeriod == period;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    return GestureDetector(
-      onTap: () => _changePeriod(period),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected 
-              ? (isDark ? const Color(0xFF3B82F6) : const Color(0xFF3B82F6))
-              : (isDark ? const Color(0xFF2A2A2A) : const Color(0xFFF3F4F6)),
-          borderRadius: BorderRadius.circular(8),
-          border: isSelected 
-              ? null 
-              : Border.all(
-                  color: isDark ? const Color(0xFF404040) : const Color(0xFFE5E7EB),
-                  width: 1,
-                ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected 
-                ? Colors.white 
-                : (isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280)),
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-            fontSize: 14,
-          ),
-        ),
       ),
     );
   }
@@ -549,20 +801,20 @@ class _ArrivalHistoryChartState extends State<ArrivalHistoryChart> {
             Icon(
               Icons.bar_chart, 
               size: 48, 
-              color: isDark ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF),
+              color: isDark ? DashboardColors.tertiaryText : const Color(0xFF9CA3AF),
             ),
             const SizedBox(height: 8),
             Text(
-              'No hay datos de asistencia disponibles',
+              'No hay datos de asistencia',
               style: TextStyle(
-                color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+                color: isDark ? DashboardColors.secondaryText : const Color(0xFF6B7280),
               ),
             ),
             const SizedBox(height: 4),
             Text(
-              'para el período seleccionado',
+              'para esta semana',
               style: TextStyle(
-                color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280), 
+                color: isDark ? DashboardColors.tertiaryText : const Color(0xFF9CA3AF), 
                 fontSize: 12,
               ),
             ),
@@ -574,17 +826,6 @@ class _ArrivalHistoryChartState extends State<ArrivalHistoryChart> {
     // Procesar datos para el gráfico
     final chartData = _processChartData();
 
-    // Usar gráfico de líneas para mes y 3 meses, barras para semana
-    if (_selectedPeriod == 'week') {
-      return _buildBarChartView(chartData);
-    } else {
-      return _buildLineChartView(chartData);
-    }
-  }
-
-  Widget _buildBarChartView(List<Map<String, dynamic>> chartData) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
     return BarChart(
       BarChartData(
         alignment: BarChartAlignment.spaceAround,
@@ -598,10 +839,24 @@ class _ArrivalHistoryChartState extends State<ArrivalHistoryChart> {
               if (group.x.toInt() < chartData.length) {
                 final date = chartData[group.x.toInt()]['date'];
                 final hour = rod.toY;
-                return BarTooltipItem(
-                  '${date}\n${hour.toStringAsFixed(1)}:00',
-                  const TextStyle(color: Colors.white),
-                );
+                final dayName = chartData[group.x.toInt()]['dayName'];
+                if (hour > 0) {
+                  // Convertir la hora decimal a formato HH:MM am/pm
+                  final hours = hour.floor();
+                  final minutes = ((hour - hours) * 60).round();
+                  final time = DateTime(2024, 1, 1, hours, minutes);
+                  final timeString = DateFormat('hh:mm a').format(time);
+                  
+                  return BarTooltipItem(
+                    '$dayName\n$date\n$timeString',
+                    const TextStyle(color: Colors.white),
+                  );
+                } else {
+                  return BarTooltipItem(
+                    '$dayName\n$date\nSin registro',
+                    const TextStyle(color: Colors.white),
+                  );
+                }
               }
               return null;
             },
@@ -614,23 +869,34 @@ class _ArrivalHistoryChartState extends State<ArrivalHistoryChart> {
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
-              reservedSize: 40,
+              reservedSize: 50,
               getTitlesWidget: (value, meta) {
                 if (value.toInt() >= 0 && value.toInt() < chartData.length) {
                   final data = chartData[value.toInt()];
-                  if (data['showLabel'] == true) {
-                    final date = data['date'];
-                    return Padding(
-                      padding: const EdgeInsets.only(top: 8.0),
-                      child: Text(
-                        date,
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+                  final dayName = data['dayName'];
+                  final date = data['date'];
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: Column(
+                      children: [
+                        Text(
+                          dayName,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? DashboardColors.tertiaryText : const Color(0xFF9CA3AF),
+                          ),
                         ),
-                      ),
-                    );
-                  }
+                        Text(
+                          date,
+                          style: TextStyle(
+                            fontSize: 9,
+                            color: isDark ? DashboardColors.tertiaryText : const Color(0xFF9CA3AF),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
                 }
                 return const SizedBox.shrink();
               },
@@ -646,7 +912,7 @@ class _ArrivalHistoryChartState extends State<ArrivalHistoryChart> {
                   '${value.toInt()}:00',
                   style: TextStyle(
                     fontSize: 10,
-                    color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+                    color: isDark ? DashboardColors.tertiaryText : const Color(0xFF9CA3AF),
                   ),
                 );
               },
@@ -657,14 +923,16 @@ class _ArrivalHistoryChartState extends State<ArrivalHistoryChart> {
         barGroups: chartData.asMap().entries.map((entry) {
           final index = entry.key;
           final data = entry.value;
+          final isToday = data['isToday'] ?? false;
+          
           return BarChartGroupData(
             x: index,
             barRods: [
               BarChartRodData(
                 toY: data['hour'].toDouble(),
                 color: data['hour'] > 0 
-                    ? const Color(0xFF3B82F6) 
-                    : (isDark ? const Color(0xFF374151) : const Color(0xFFF3F4F6)),
+                    ? (isToday ? DashboardColors.accentGreen : DashboardColors.barBlue)
+                    : (isDark ? DashboardColors.cardBorder : const Color(0xFFF3F4F6)),
                 width: 25,
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(4),
@@ -678,225 +946,18 @@ class _ArrivalHistoryChartState extends State<ArrivalHistoryChart> {
     );
   }
 
-  Widget _buildLineChartView(List<Map<String, dynamic>> chartData) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    // Filtrar solo datos con valores > 0 para el gráfico de líneas
-    final validData = chartData.where((data) => data['hour'] > 0).toList();
-    
-    if (validData.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.show_chart, 
-              size: 48, 
-              color: isDark ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'No hay datos de asistencia',
-              style: TextStyle(
-                color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'en este período',
-              style: TextStyle(
-                color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280), 
-                fontSize: 12,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return LineChart(
-      LineChartData(
-        gridData: FlGridData(
-          show: true,
-          drawVerticalLine: true,
-          horizontalInterval: 4,
-          verticalInterval: 1,
-          getDrawingHorizontalLine: (value) {
-            return FlLine(
-              color: isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB),
-              strokeWidth: 1,
-            );
-          },
-          getDrawingVerticalLine: (value) {
-            return FlLine(
-              color: isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB),
-              strokeWidth: 1,
-            );
-          },
-        ),
-        titlesData: FlTitlesData(
-          show: true,
-          rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              reservedSize: 40,
-              interval: _getXAxisInterval(),
-              getTitlesWidget: (value, meta) {
-                if (value.toInt() >= 0 && value.toInt() < chartData.length) {
-                  final data = chartData[value.toInt()];
-                  if (data['showLabel'] == true) {
-                    final date = data['date'];
-                    return Padding(
-                      padding: const EdgeInsets.only(top: 8.0),
-                      child: Text(
-                        date,
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
-                        ),
-                      ),
-                    );
-                  }
-                }
-                return const SizedBox.shrink();
-              },
-            ),
-          ),
-          leftTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              reservedSize: 40,
-              interval: 4,
-              getTitlesWidget: (value, meta) {
-                return Text(
-                  '${value.toInt()}:00',
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
-                  ),
-                );
-              },
-            ),
-          ),
-        ),
-        borderData: FlBorderData(
-          show: true,
-          border: Border.all(
-            color: isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB),
-          ),
-        ),
-        minX: 0,
-        maxX: (chartData.length - 1).toDouble(),
-        minY: 0,
-        maxY: 24,
-        lineBarsData: [
-          LineChartBarData(
-            spots: chartData.asMap().entries.map((entry) {
-              final index = entry.key;
-              final data = entry.value;
-              return FlSpot(index.toDouble(), data['hour'].toDouble());
-            }).toList(),
-            isCurved: true,
-            color: const Color(0xFF3B82F6),
-            barWidth: 3,
-            isStrokeCapRound: true,
-            dotData: FlDotData(
-              show: true,
-              getDotPainter: (spot, percent, barData, index) {
-                return FlDotCirclePainter(
-                  radius: 4,
-                  color: const Color(0xFF3B82F6),
-                  strokeWidth: 2,
-                  strokeColor: isDark ? const Color(0xFF1A1A1A) : Colors.white,
-                );
-              },
-            ),
-            belowBarData: BarAreaData(
-              show: true,
-              color: const Color(0xFF3B82F6).withOpacity(0.1),
-            ),
-          ),
-        ],
-        lineTouchData: LineTouchData(
-          enabled: true,
-          touchTooltipData: LineTouchTooltipData(
-            tooltipBgColor: isDark ? const Color(0xFF374151) : const Color(0xFF1F2937),
-            getTooltipItems: (touchedSpots) {
-              return touchedSpots.map((touchedSpot) {
-                final index = touchedSpot.x.toInt();
-                if (index >= 0 && index < chartData.length) {
-                  final date = chartData[index]['date'];
-                  final hour = touchedSpot.y;
-                  return LineTooltipItem(
-                    '${date}\n${hour.toStringAsFixed(1)}:00',
-                    const TextStyle(color: Colors.white),
-                  );
-                }
-                return null;
-              }).toList();
-            },
-          ),
-        ),
-      ),
-    );
-  }
-
-  double _getXAxisInterval() {
-    switch (_selectedPeriod) {
-      case 'month':
-        return 5; // Mostrar cada 5 días
-      case '3months':
-        return 15; // Mostrar cada 15 días
-      default:
-        return 1;
-    }
-  }
-
   List<Map<String, dynamic>> _processChartData() {
     final List<Map<String, dynamic>> result = [];
     final now = DateTime.now();
     
-    int daysToShow;
-    int interval;
-    switch (_selectedPeriod) {
-      case 'week':
-        daysToShow = 7;
-        interval = 1; // Mostrar todos los días
-        break;
-      case 'month':
-        daysToShow = 30;
-        interval = 3; // Mostrar cada 3 días
-        break;
-      case '3months':
-        daysToShow = 90;
-        interval = 7; // Mostrar cada semana
-        break;
-      default:
-        daysToShow = 7;
-        interval = 1;
-    }
-    
-    // Crear lista de días según el período seleccionado
-    for (int i = daysToShow - 1; i >= 0; i--) {
-      final date = now.subtract(Duration(days: i));
-      String dateStr;
-      
-      // Formato de fecha según el período
-      switch (_selectedPeriod) {
-        case 'week':
-          dateStr = DateFormat('dd/MM').format(date);
-          break;
-        case 'month':
-          dateStr = DateFormat('dd/MM').format(date);
-          break;
-        case '3months':
-          dateStr = DateFormat('dd/MM').format(date);
-          break;
-        default:
-          dateStr = DateFormat('dd/MM').format(date);
-      }
+    // Crear lista de 7 días de la semana seleccionada
+    for (int i = 0; i < 7; i++) {
+      final date = _selectedWeekStart.add(Duration(days: i));
+      final dateStr = DateFormat('dd/MM').format(date);
+      final dayName = DateFormat('EEE', 'es').format(date);
+      final isToday = now.year == date.year && 
+                     now.month == date.month && 
+                     now.day == date.day;
       
       // Buscar datos de asistencia para esta fecha
       final attendanceForDate = _attendanceData.where((data) {
@@ -913,21 +974,7 @@ class _ArrivalHistoryChartState extends State<ArrivalHistoryChart> {
           try {
             // Parsear el timestamp con timezone y convertir a hora local
             final utcTime = DateTime.parse(checkInTime);
-            
-            // Para Perú: UTC-5 (o UTC-4 durante horario de verano)
-            // Usar toLocal() que automáticamente detecta la zona horaria del dispositivo
             final localTime = utcTime.toLocal();
-            
-            // Debug: Mostrar información de timezone
-            print('=== TIMEZONE DEBUG ===');
-            print('UTC Time: $utcTime');
-            print('Local Time: $localTime');
-            print('Timezone Offset: ${DateTime.now().timeZoneOffset}');
-            print('Is UTC: ${utcTime.isUtc}');
-            print('Is Local: ${localTime.isUtc}');
-            print('Original check_in_time: $checkInTime');
-            print('Hora local extraída: ${localTime.hour}:${localTime.minute}');
-            print('======================');
             
             // Extraer hora y minutos de la hora local
             hour = localTime.hour.toDouble() + (localTime.minute / 60.0);
@@ -940,8 +987,9 @@ class _ArrivalHistoryChartState extends State<ArrivalHistoryChart> {
 
       result.add({
         'date': dateStr,
+        'dayName': dayName,
         'hour': hour,
-        'showLabel': i % interval == 0, // Solo mostrar etiqueta cada 'interval' días
+        'isToday': isToday,
       });
     }
 
