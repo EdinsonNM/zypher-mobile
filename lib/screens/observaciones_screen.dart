@@ -152,37 +152,10 @@ class _ObservacionesScreenState extends State<ObservacionesScreen> {
       backgroundColor: const Color(0xFF111827),
       body: Column(
         children: [
-          // Header
-          Container(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                IconButton(
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(
-                    Icons.arrow_back_ios,
-                    color: Colors.white,
-                  ),
-                ),
-                const Expanded(
-                  child: Text(
-                    'Observaciones',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-                const SizedBox(width: 32), // Balance the back button
-              ],
-            ),
-          ),
 
           // Student Info
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
                 CircleAvatar(

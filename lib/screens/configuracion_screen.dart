@@ -35,27 +35,11 @@ class ConfiguracionScreen extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            // Header
-            Container(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Text(
-                    'Ajustes',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: DashboardColors.primaryText,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            
+       
             // Contenido principal
             Expanded(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
                     // Gestionar Cuenta

@@ -85,7 +85,7 @@ class _ObservationsModalContentState extends State<_ObservationsModalContent> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Container(
-      height: MediaQuery.of(context).size.height * 0.7,
+      height: MediaQuery.of(context).size.height * 0.7 + MediaQuery.of(context).padding.bottom,
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1A1A1A) : Colors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
@@ -113,15 +113,16 @@ class _ObservationsModalContentState extends State<_ObservationsModalContent> {
                   size: 24,
                 ),
                 const SizedBox(width: 12),
-                Text(
-                  'Últimas Observaciones',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.white : const Color(0xFF0F172A),
+                Expanded(
+                  child: Text(
+                    'Últimas Observaciones',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white : const Color(0xFF0F172A),
+                    ),
                   ),
                 ),
-                const Spacer(),
                 IconButton(
                   onPressed: () => Navigator.pop(context),
                   icon: Icon(
@@ -153,6 +154,7 @@ class _ObservationsModalContentState extends State<_ObservationsModalContent> {
                                 fontSize: 16,
                                 color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
                               ),
+                              textAlign: TextAlign.center,
                             ),
                           ],
                         ),
@@ -182,27 +184,33 @@ class _ObservationsModalContentState extends State<_ObservationsModalContent> {
                                 children: [
                                   Row(
                                     children: [
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                        decoration: BoxDecoration(
-                                          color: severityColor.withOpacity(0.1),
-                                          borderRadius: BorderRadius.circular(6),
-                                        ),
-                                        child: Text(
-                                          observation.severity.toUpperCase(),
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w600,
-                                            color: severityColor,
+                                      Flexible(
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: severityColor.withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(6),
+                                          ),
+                                          child: Text(
+                                            observation.severity.toUpperCase(),
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                              color: severityColor,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
                                       ),
                                       const Spacer(),
-                                      Text(
-                                        dateFormat.format(observation.date),
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+                                      Flexible(
+                                        child: Text(
+                                          dateFormat.format(observation.date),
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
                                     ],
@@ -215,6 +223,8 @@ class _ObservationsModalContentState extends State<_ObservationsModalContent> {
                                       fontWeight: FontWeight.w600,
                                       color: isDark ? Colors.white : const Color(0xFF0F172A),
                                     ),
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 2,
                                   ),
                                   const SizedBox(height: 8),
                                   Text(
@@ -223,20 +233,25 @@ class _ObservationsModalContentState extends State<_ObservationsModalContent> {
                                       fontSize: 14,
                                       color: isDark ? const Color(0xFFD1D5DB) : const Color(0xFF4B5563),
                                     ),
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 3,
                                   ),
                                   if (observation.category != null) ...[
                                     const SizedBox(height: 8),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: isDark ? const Color(0xFF374151) : const Color(0xFFF3F4F6),
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: Text(
-                                        observation.category!.name,
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+                                    Flexible(
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: isDark ? const Color(0xFF374151) : const Color(0xFFF3F4F6),
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        child: Text(
+                                          observation.category!.name,
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
                                     ),
@@ -247,6 +262,32 @@ class _ObservationsModalContentState extends State<_ObservationsModalContent> {
                           );
                         },
                       ),
+          ),
+          // Botón de cerrar
+          Padding(
+            padding: EdgeInsets.fromLTRB(20, 0, 20, 20 + MediaQuery.of(context).padding.bottom),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: isDark ? const Color(0xFF374151) : const Color(0xFF6B7280),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  elevation: 0,
+                ),
+                child: const Text(
+                  'Cerrar',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -321,7 +362,7 @@ class _PaymentsModalContentState extends State<_PaymentsModalContent> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Container(
-      height: MediaQuery.of(context).size.height * 0.7,
+      height: MediaQuery.of(context).size.height * 0.7 + MediaQuery.of(context).padding.bottom,
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1A1A1A) : Colors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
@@ -349,15 +390,16 @@ class _PaymentsModalContentState extends State<_PaymentsModalContent> {
                   size: 24,
                 ),
                 const SizedBox(width: 12),
-                Text(
-                  'Pagos Pendientes',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.white : const Color(0xFF0F172A),
+                Expanded(
+                  child: Text(
+                    'Pagos Pendientes',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white : const Color(0xFF0F172A),
+                    ),
                   ),
                 ),
-                const Spacer(),
                 IconButton(
                   onPressed: () => Navigator.pop(context),
                   icon: Icon(
@@ -389,6 +431,7 @@ class _PaymentsModalContentState extends State<_PaymentsModalContent> {
                                 fontSize: 16,
                                 color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
                               ),
+                              textAlign: TextAlign.center,
                             ),
                           ],
                         ),
@@ -419,28 +462,34 @@ class _PaymentsModalContentState extends State<_PaymentsModalContent> {
                                 children: [
                                   Row(
                                     children: [
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                        decoration: BoxDecoration(
-                                          color: statusColor.withOpacity(0.1),
-                                          borderRadius: BorderRadius.circular(6),
-                                        ),
-                                        child: Text(
-                                          payment['status'].toUpperCase(),
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w600,
-                                            color: statusColor,
+                                      Flexible(
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: statusColor.withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(6),
+                                          ),
+                                          child: Text(
+                                            payment['status'].toUpperCase(),
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                              color: statusColor,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
                                       ),
                                       const Spacer(),
-                                      Text(
-                                        '\$${payment['amount'].toStringAsFixed(2)}',
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.w700,
-                                          color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                      Flexible(
+                                        child: Text(
+                                          '\$${payment['amount'].toStringAsFixed(2)}',
+                                          style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.w700,
+                                            color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
                                     ],
@@ -453,6 +502,8 @@ class _PaymentsModalContentState extends State<_PaymentsModalContent> {
                                       fontWeight: FontWeight.w600,
                                       color: isDark ? Colors.white : const Color(0xFF0F172A),
                                     ),
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 2,
                                   ),
                                   const SizedBox(height: 8),
                                   Row(
@@ -463,14 +514,17 @@ class _PaymentsModalContentState extends State<_PaymentsModalContent> {
                                         color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
                                       ),
                                       const SizedBox(width: 8),
-                                      Text(
-                                        'Vence: ${dateFormat.format(payment['dueDate'])}',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          color: isOverdue 
-                                              ? Colors.red 
-                                              : (isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280)),
-                                          fontWeight: isOverdue ? FontWeight.w600 : FontWeight.normal,
+                                      Expanded(
+                                        child: Text(
+                                          'Vence: ${dateFormat.format(payment['dueDate'])}',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: isOverdue 
+                                                ? Colors.red 
+                                                : (isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280)),
+                                            fontWeight: isOverdue ? FontWeight.w600 : FontWeight.normal,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
                                     ],
@@ -481,6 +535,32 @@ class _PaymentsModalContentState extends State<_PaymentsModalContent> {
                           );
                         },
                       ),
+          ),
+          // Botón de cerrar
+          Padding(
+            padding: EdgeInsets.fromLTRB(20, 0, 20, 20 + MediaQuery.of(context).padding.bottom),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: isDark ? const Color(0xFF374151) : const Color(0xFF6B7280),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  elevation: 0,
+                ),
+                child: const Text(
+                  'Cerrar',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
           ),
         ],
       ),
