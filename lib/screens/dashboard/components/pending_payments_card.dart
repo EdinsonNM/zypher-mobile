@@ -4,11 +4,13 @@ import 'package:zypher/core/constants/dashboard_colors.dart';
 class PendingPaymentsCard extends StatelessWidget {
   final List<Map<String, String>> payments;
   final VoidCallback? onGoToPay;
+  final Function(Map<String, String>)? onItemSelected;
 
   const PendingPaymentsCard({
     Key? key,
     required this.payments,
     this.onGoToPay,
+    this.onItemSelected,
   }) : super(key: key);
 
   @override
@@ -85,27 +87,50 @@ class PendingPaymentsCard extends StatelessWidget {
               
               return Column(
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          payment['concept'] ?? '',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: isDark ? DashboardColors.secondaryText : const Color(0xFF374151),
+                  GestureDetector(
+                    onTap: () {
+                      if (onItemSelected != null) {
+                        onItemSelected!(payment);
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              payment['concept'] ?? '',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: isDark ? DashboardColors.secondaryText : const Color(0xFF374151),
+                              ),
+                            ),
                           ),
-                        ),
+                          Row(
+                            children: [
+                              Text(
+                                payment['dueDate'] ?? '',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: isDark ? DashboardColors.tertiaryText : const Color(0xFF9CA3AF),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Icon(
+                                Icons.arrow_forward_ios,
+                                size: 12,
+                                color: isDark ? DashboardColors.tertiaryText : const Color(0xFF9CA3AF),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                      Text(
-                        payment['dueDate'] ?? '',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: const Color(0xFFF87171),
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                   if (!isLast) 
                     Padding(

@@ -531,6 +531,1129 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  // Funciones para manejar la selección de items
+  void _onObservationSelected(Map<String, String> observation) {
+    print('Observación seleccionada: ${observation['text']}');
+    _showObservationDetailsModal(observation);
+  }
+
+  void _onNotificationSelected(Map<String, String> notification) {
+    print('Notificación seleccionada: ${notification['text']}');
+    _showNotificationDetailsModal(notification);
+  }
+
+  void _onEventSelected(Map<String, String> event) {
+    print('Evento seleccionado: ${event['text']}');
+    _showEventDetailsModal(event);
+  }
+
+  void _onPaymentSelected(Map<String, String> payment) {
+    print('Pago seleccionado: ${payment['concept']}');
+    _showPaymentDetailsModal(payment);
+  }
+
+  // Funciones para mostrar modal sheets
+  void _showObservationDetailsModal(Map<String, String> observation) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.8,
+        decoration: const BoxDecoration(
+          color: Color(0xFF1F2937), // bg-gray-800
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)), // rounded-t-2xl
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(24), // p-6
+          child: Column(
+            children: [
+              // Handle bar - centered
+              Center(
+                child: Container(
+                  width: 40, // w-10
+                  height: 6, // h-1.5
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF4B5563), // bg-gray-600
+                    borderRadius: BorderRadius.circular(3), // rounded-full
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12), // mb-3
+              // Header with icon and title
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 40, // p-2 equivalent
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981), // bg-green-500
+                      borderRadius: BorderRadius.circular(20), // rounded-full
+                    ),
+                    child: const Icon(
+                      Icons.visibility,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 16), // space-x-4
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          observation['text'] ?? 'Comportamiento en el aula',
+                          style: const TextStyle(
+                            fontSize: 20, // text-xl
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 4), // mt-1
+                        Text(
+                          'Reportado por ${observation['teacher'] ?? 'Prof. Luis'}',
+                          style: const TextStyle(
+                            fontSize: 12, // text-xs
+                            color: Color(0xFF6B7280), // text-gray-500
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16), // mb-4
+              // Details Section
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Details with icons
+                    Column(
+                      children: [
+                        // Date and Time
+                        _buildDetailItem(
+                          Icons.calendar_today,
+                          '26 de agosto de 2024, 10:30 AM',
+                        ),
+                        const SizedBox(height: 16), // space-y-4
+                        // Severity
+                        _buildDetailItem(
+                          Icons.priority_high,
+                          'Leve',
+                          isSeverity: true,
+                        ),
+                        const SizedBox(height: 16),
+                        // Category
+                        _buildDetailItem(
+                          Icons.label,
+                          'Conducta',
+                        ),
+                      ],
+                    ),
+                    // Divider
+                    Container(
+                      margin: const EdgeInsets.symmetric(vertical: 8), // my-2
+                      height: 1,
+                      color: const Color(0xFF374151), // border-gray-700
+                    ),
+                    // Description Section
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Descripción de la Observación',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600, // font-semibold
+                              color: Colors.white,
+                              fontSize: 16,
+                            ),
+                          ),
+                          const SizedBox(height: 8), // mb-2
+                          Expanded(
+                            child: Text(
+                              observation['description'] ?? 'Durante la clase de matemáticas, Sebastian interrumpió repetidamente al profesor y a sus compañeros. Se le llamó la atención en varias ocasiones pero su comportamiento no mejoró. Se recomienda conversar con él sobre la importancia del respeto en el aula.',
+                              style: const TextStyle(
+                                color: Color(0xFF9CA3AF), // text-gray-400
+                                height: 1.6, // leading-relaxed
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Action button
+              const SizedBox(height: 24), // mt-6
+              SizedBox(
+                width: double.infinity, // w-full
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF3B82F6), // bg-blue-500
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12), // py-3
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8), // rounded-lg
+                    ),
+                    elevation: 0,
+                  ),
+                  child: const Text(
+                    'Cerrar',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600, // font-semibold
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showNotificationDetailsModal(Map<String, String> notification) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.7,
+        decoration: const BoxDecoration(
+          color: Color(0xFF1F2937), // bg-gray-800
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)), // rounded-t-2xl
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(24), // p-6
+          child: Column(
+            children: [
+              // Handle bar - centered
+              Center(
+                child: Container(
+                  width: 40, // w-10
+                  height: 6, // h-1.5
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF4B5563), // bg-gray-600
+                    borderRadius: BorderRadius.circular(3), // rounded-full
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12), // mb-3
+              // Header with icon and title
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 40, // p-2 equivalent
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF3B82F6), // bg-blue-500
+                      borderRadius: BorderRadius.circular(20), // rounded-full
+                    ),
+                    child: const Icon(
+                      Icons.notifications,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 16), // space-x-4
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          notification['text'] ?? 'Reunión de padres',
+                          style: const TextStyle(
+                            fontSize: 20, // text-xl
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Dirección',
+                          style: const TextStyle(
+                            fontSize: 14, // text-sm
+                            color: Color(0xFF9CA3AF), // text-gray-400
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Hace ${notification['time'] ?? '2 horas'}',
+                          style: const TextStyle(
+                            fontSize: 12, // text-xs
+                            color: Color(0xFF6B7280), // text-gray-500
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16), // mb-4
+              // Divider
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 16), // my-4
+                height: 1,
+                color: const Color(0xFF374151), // border-gray-700
+              ),
+              // Content
+              Expanded(
+                child: Text(
+                  notification['content'] ?? 'Se les recuerda que la reunión de padres de familia se llevará a cabo el próximo viernes a las 5:00 PM en el auditorio del colegio. Su asistencia es muy importante para tratar temas relacionados con el rendimiento académico y el comportamiento de los estudiantes.',
+                  style: const TextStyle(
+                    color: Color(0xFFD1D5DB), // text-gray-300
+                    fontSize: 14,
+                    height: 1.6, // leading-relaxed
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24), // mb-6
+              // Action button
+              SizedBox(
+                width: double.infinity, // w-full
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF3B82F6), // bg-blue-500
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12), // py-3
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8), // rounded-lg
+                    ),
+                    elevation: 0,
+                  ),
+                  child: const Text(
+                    'Entendido',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600, // font-semibold
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showEventDetailsModal(Map<String, String> event) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.8,
+        decoration: const BoxDecoration(
+          color: Color(0xFF1F2937), // bg-gray-800
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)), // rounded-t-2xl
+        ),
+        child: Column(
+          children: [
+            // Header section
+            Container(
+              padding: const EdgeInsets.all(16), // p-4
+              child: Column(
+                children: [
+                  // Handle bar - centered
+                  Center(
+                    child: Container(
+                      width: 48, // w-12
+                      height: 6, // h-1.5
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF4B5563), // bg-gray-600
+                        borderRadius: BorderRadius.circular(3), // rounded-full
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16), // mb-4
+                  // Title
+                  Text(
+                    event['text'] ?? 'Excursión al Museo de Arte',
+                    style: const TextStyle(
+                      fontSize: 24, // text-2xl
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+            // Content section
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 0), // px-6 pb-8
+                child: Column(
+                  children: [
+                    // Description
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Descripción',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600, // font-semibold
+                            fontSize: 18, // text-lg
+                            color: Color(0xFFD1D5DB), // text-gray-300
+                          ),
+                        ),
+                        const SizedBox(height: 8), // mb-2
+                        Text(
+                          event['description'] ?? 'Visita guiada al Museo de Arte Moderno para conocer las principales corrientes artísticas del siglo XX. Los estudiantes podrán participar en un taller de pintura al final del recorrido. Se recomienda llevar ropa cómoda y almuerzo.',
+                          style: const TextStyle(
+                            color: Color(0xFF9CA3AF), // text-gray-400
+                            fontSize: 14, // text-sm
+                            height: 1.6, // leading-relaxed
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24), // space-y-6
+                    // Divider
+                    Container(
+                      height: 1,
+                      color: const Color(0xFF374151), // border-gray-700
+                    ),
+                    const SizedBox(height: 24), // space-y-6
+                    // Details section
+                    Column(
+                      children: [
+                        // Date and Time
+                        _buildEventDetailItem(
+                          Icons.calendar_today,
+                          'Fecha y Hora',
+                          'Viernes, 25 de agosto de 2024',
+                          '9:00 AM - 2:00 PM',
+                          const Color(0xFFFBBF24), // text-yellow-400
+                        ),
+                        const SizedBox(height: 16), // space-y-4
+                        // Location
+                        _buildEventDetailItem(
+                          Icons.location_on,
+                          'Ubicación',
+                          'Museo de Arte Moderno',
+                          'Av. Principal 123, Centro de la Ciudad',
+                          const Color(0xFF60A5FA), // text-blue-400
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24), // space-y-6
+                    // Divider
+                    Container(
+                      height: 1,
+                      color: const Color(0xFF374151), // border-gray-700
+                    ),
+                    const SizedBox(height: 8), // pt-2
+                    // Action buttons
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () => Navigator.pop(context),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF374151), // bg-gray-700
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24), // py-3 px-6
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8), // rounded-lg
+                              ),
+                              elevation: 0,
+                            ),
+                            child: const Text(
+                              'Cerrar',
+                              style: TextStyle(
+                                fontSize: 14, // text-sm
+                                fontWeight: FontWeight.w500, // font-medium
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              // Aquí puedes agregar la lógica para recordar
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Evento agregado a recordatorios')),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF2563EB), // bg-blue-600
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24), // py-3 px-6
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8), // rounded-lg
+                              ),
+                              elevation: 0,
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(
+                                  Icons.add_alert,
+                                  size: 16, // text-sm
+                                  color: Colors.white,
+                                ),
+                                const SizedBox(width: 8), // mr-2
+                                const Text(
+                                  'Recordarme',
+                                  style: TextStyle(
+                                    fontSize: 14, // text-sm
+                                    fontWeight: FontWeight.w500, // font-medium
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showPaymentDetailsModal(Map<String, String> payment) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.6,
+        decoration: const BoxDecoration(
+          color: Color(0xFF1F2937), // bg-gray-800
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)), // rounded-t-2xl
+        ),
+        child: Column(
+          children: [
+            // Handle bar - centered
+            Center(
+              child: Container(
+                width: 40, // w-10
+                height: 6, // h-1.5
+                decoration: BoxDecoration(
+                  color: const Color(0xFF4B5563), // bg-gray-600
+                  borderRadius: BorderRadius.circular(3), // rounded-full
+                ),
+              ),
+            ),
+            const SizedBox(height: 12), // mb-3
+            // Header with icon and title
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Row(
+                children: [
+                  Container(
+                    width: 40, // p-2 equivalent
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF87171), // bg-red-500
+                      borderRadius: BorderRadius.circular(20), // rounded-full
+                    ),
+                    child: const Icon(
+                      Icons.payment,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 16), // space-x-4
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Pagos Pendientes',
+                          style: const TextStyle(
+                            fontSize: 20, // text-xl
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Estado de cuenta',
+                          style: const TextStyle(
+                            fontSize: 14, // text-sm
+                            color: Color(0xFF9CA3AF), // text-gray-400
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16), // mb-4
+            // Content
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Payment details
+                    Container(
+                      padding: const EdgeInsets.all(16), // p-4
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF374151), // bg-gray-700
+                        borderRadius: BorderRadius.circular(12), // rounded-xl
+                      ),
+                      child: Column(
+                        children: [
+                          // Header row
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  const Icon(
+                                    Icons.payment,
+                                    color: Color(0xFFF87171), // text-red-400
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 12), // mr-3
+                                  const Text(
+                                    'Pagos Pendientes',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600, // font-semibold
+                                      fontSize: 18, // text-lg
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              GestureDetector(
+                                onTap: () {
+                                  // Aquí puedes agregar la lógica para ver más detalles
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Abriendo detalles completos...')),
+                                  );
+                                },
+                                child: Row(
+                                  children: [
+                                    const Text(
+                                      'Ver detalle',
+                                      style: TextStyle(
+                                        color: Color(0xFF60A5FA), // text-blue-400
+                                        fontSize: 14, // text-sm
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4), // ml-1
+                                    const Icon(
+                                      Icons.arrow_forward_ios,
+                                      color: Color(0xFF60A5FA), // text-blue-400
+                                      size: 16, // text-sm
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12), // mb-3
+                          // Payment items
+                          Column(
+                            children: [
+                              // Payment item
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    payment['concept'] ?? 'Pensión de agosto',
+                                    style: const TextStyle(
+                                      color: Color(0xFFD1D5DB), // text-gray-300
+                                      fontSize: 14, // text-sm
+                                    ),
+                                  ),
+                                  Text(
+                                    'Vence en ${payment['dueDate'] ?? '3 días'}',
+                                    style: const TextStyle(
+                                      color: Color(0xFFF87171), // text-red-400
+                                      fontSize: 12, // text-xs
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8), // space-y-2
+                              // Additional payment items can be added here
+                              if (payment['amount']?.isNotEmpty == true)
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'Monto pendiente',
+                                      style: const TextStyle(
+                                        color: Color(0xFFD1D5DB), // text-gray-300
+                                        fontSize: 14, // text-sm
+                                      ),
+                                    ),
+                                    Text(
+                                      payment['amount'] ?? '',
+                                      style: const TextStyle(
+                                        color: Color(0xFFF87171), // text-red-400
+                                        fontSize: 12, // text-xs
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // Action button
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: SizedBox(
+                width: double.infinity, // w-full
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    // Aquí puedes agregar la lógica para ir a pagar
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Redirigiendo a la página de pagos...')),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF3B82F6), // bg-blue-500
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12), // py-3
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8), // rounded-lg
+                    ),
+                    elevation: 0,
+                  ),
+                  child: const Text(
+                    'Ir a Pagar',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600, // font-semibold
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Función auxiliar para construir secciones de contenido con iconos y colores
+  Widget _buildContentSection(String title, String content, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              icon,
+              color: color,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  content,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.grey[700],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSeveritySection(String severity) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    Color severityColor;
+    String severityText;
+
+    switch (severity) {
+      case 'high':
+        severityColor = isDark ? Colors.red[300]! : Colors.red[700]!;
+        severityText = 'Alta';
+        break;
+      case 'medium':
+        severityColor = isDark ? Colors.orange[300]! : Colors.orange[700]!;
+        severityText = 'Media';
+        break;
+      default: // low
+        severityColor = isDark ? Colors.green[300]! : Colors.green[700]!;
+        severityText = 'Baja';
+        break;
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: severityColor!.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: severityColor!.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              Icons.priority_high,
+              color: severityColor,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Severidad',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  severityText,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: severityColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNotificationContent(String title) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF60A5FA).withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: const Color(0xFF60A5FA).withOpacity(0.2),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(
+              Icons.notifications,
+              color: Color(0xFF60A5FA),
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF60A5FA),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Hace ${_notifications.firstWhere((notif) => notif['text'] == title)['time'] ?? 'un momento'}',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEventContent(String title) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: DashboardColors.accentYellow.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: DashboardColors.accentYellow.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(
+              Icons.event,
+              color: DashboardColors.accentYellow,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: DashboardColors.accentYellow,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Hace ${_upcomingEvents.firstWhere((event) => event['text'] == title)['date'] ?? 'un momento'}',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPaymentContent(String concept) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF87171).withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF87171).withOpacity(0.2),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(
+              Icons.payment,
+              color: Color(0xFFF87171),
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  concept,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFFF87171),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Hace ${_pendingPaymentsList.firstWhere((payment) => payment['concept'] == concept)['dueDate'] ?? 'un momento'}',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPaymentStatusCard() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isPaid = _pendingPaymentsList.firstWhere((payment) => payment['concept'] == 'Matrícula')['dueDate'] == 'Pendiente de pago';
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isPaid ? const Color(0xFF34D399).withOpacity(0.1) : const Color(0xFFF87171).withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: isPaid ? const Color(0xFF34D399).withOpacity(0.2) : const Color(0xFFF87171).withOpacity(0.2),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              isPaid ? Icons.check_circle : Icons.warning,
+              color: isPaid ? const Color(0xFF34D399) : const Color(0xFFF87171),
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Estado del Pago',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  isPaid ? 'Pagado' : 'Pendiente',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: isPaid ? const Color(0xFF34D399) : const Color(0xFFF87171),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Helper for detail rows in observation modal
+  Widget _buildDetailItem(IconData icon, String label, {bool isSeverity = false}) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          color: const Color(0xFF9CA3AF), // text-gray-400
+          size: 20,
+        ),
+        const SizedBox(width: 12), // mr-3
+        if (isSeverity)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2), // px-2.5 py-0.5
+            decoration: BoxDecoration(
+              color: const Color(0xFFEAB308), // bg-yellow-500
+              borderRadius: BorderRadius.circular(20), // rounded-full
+            ),
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: Color(0xFF92400E), // text-yellow-900
+                fontSize: 12, // text-xs
+                fontWeight: FontWeight.w600, // font-semibold
+              ),
+            ),
+          )
+        else
+          Text(
+            label,
+            style: const TextStyle(
+              color: Color(0xFFD1D5DB), // text-gray-300
+              fontSize: 14,
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildEventDetailItem(IconData icon, String title, String subtitle, String description, Color iconColor) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(
+          icon,
+          color: iconColor,
+          size: 20,
+        ),
+        const SizedBox(width: 16), // mr-4
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w500, // font-medium
+                  fontSize: 16, // text-lg
+                  color: Color(0xFFD1D5DB), // text-gray-300
+                ),
+              ),
+              const SizedBox(height: 4), // mb-2
+              Text(
+                subtitle,
+                style: const TextStyle(
+                  color: Color(0xFF9CA3AF), // text-gray-400
+                  fontSize: 14, // text-sm
+                ),
+              ),
+              Text(
+                description,
+                style: const TextStyle(
+                  color: Color(0xFF6B7280), // text-gray-500
+                  fontSize: 12, // text-xs
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final studentProvider = Provider.of<StudentProvider>(context);
@@ -604,6 +1727,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       SnackBar(content: Text('Ver todos los eventos')),
                     );
                   },
+                  onItemSelected: _onEventSelected,
                 ),
                 const SizedBox(height: 20),
                 NotificationsCard(
@@ -615,6 +1739,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       SnackBar(content: Text('Ver todas las notificaciones')),
                     );
                   },
+                  onItemSelected: _onNotificationSelected,
                 ),
                 const SizedBox(height: 20),
                 PendingPaymentsCard(
@@ -626,6 +1751,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       SnackBar(content: Text('Ir a pagar')),
                     );
                   },
+                  onItemSelected: _onPaymentSelected,
                 ),
                 const SizedBox(height: 20),
                 ObservationsCard(
@@ -639,6 +1765,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       DashboardModals.showObservationsModal(context, currentStudent.enrollment.id);
                     }
                   },
+                  onItemSelected: _onObservationSelected,
                 ),
               ],
             ),

@@ -4,11 +4,13 @@ import 'package:zypher/core/constants/dashboard_colors.dart';
 class NotificationsCard extends StatelessWidget {
   final List<Map<String, String>> notifications;
   final VoidCallback? onViewAll;
+  final Function(Map<String, String>)? onItemSelected;
 
   const NotificationsCard({
     Key? key,
     required this.notifications,
     this.onViewAll,
+    this.onItemSelected,
   }) : super(key: key);
 
   @override
@@ -85,26 +87,50 @@ class NotificationsCard extends StatelessWidget {
               
               return Column(
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          notification['text'] ?? '',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: isDark ? DashboardColors.secondaryText : const Color(0xFF374151),
+                  GestureDetector(
+                    onTap: () {
+                      if (onItemSelected != null) {
+                        onItemSelected!(notification);
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              notification['text'] ?? '',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: isDark ? DashboardColors.secondaryText : const Color(0xFF374151),
+                              ),
+                            ),
                           ),
-                        ),
+                          Row(
+                            children: [
+                              Text(
+                                notification['time'] ?? '',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: isDark ? DashboardColors.tertiaryText : const Color(0xFF9CA3AF),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Icon(
+                                Icons.arrow_forward_ios,
+                                size: 12,
+                                color: isDark ? DashboardColors.tertiaryText : const Color(0xFF9CA3AF),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                      Text(
-                        notification['time'] ?? '',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: isDark ? DashboardColors.tertiaryText : const Color(0xFF9CA3AF),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                   if (!isLast) 
                     Padding(
