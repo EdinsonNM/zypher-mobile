@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:zypher/core/providers/theme_provider.dart';
 import 'package:zypher/core/providers/student_provider.dart';
 import 'package:zypher/services/supabase_service.dart';
-import 'package:zypher/core/constants/dashboard_colors.dart';
+import 'package:zypher/core/constants/theme_colors.dart';
 
 class ConfiguracionScreen extends StatelessWidget {
   const ConfiguracionScreen({super.key});
@@ -29,9 +29,10 @@ class ConfiguracionScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
+    final theme = Theme.of(context);
     
     return Scaffold(
-      //backgroundColor: DashboardColors.mainBackground,
+      backgroundColor: ThemeColors.getBackground(theme),
       body: SafeArea(
         child: Column(
           children: [
@@ -49,6 +50,7 @@ class ConfiguracionScreen extends StatelessWidget {
                       onTap: () {
                         // TODO: Implementar gestión de cuenta
                       },
+                      theme: theme,
                     ),
                     
                     const SizedBox(height: 32),
@@ -57,8 +59,12 @@ class ConfiguracionScreen extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: DashboardColors.cardBackground,
+                        color: ThemeColors.getCardBackground(theme),
                         borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: ThemeColors.getCardBorder(theme),
+                          width: 1,
+                        ),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -66,13 +72,13 @@ class ConfiguracionScreen extends StatelessWidget {
                           Text(
                             'Apariencia',
                             style: TextStyle(
-                              color: DashboardColors.secondaryText,
+                              color: ThemeColors.getSecondaryText(theme),
                               fontWeight: FontWeight.w500,
                               fontSize: 16,
                             ),
                           ),
                           const SizedBox(height: 16),
-                          _buildThemeSelector(themeProvider),
+                          _buildThemeSelector(themeProvider, theme),
                         ],
                       ),
                     ),
@@ -82,8 +88,12 @@ class ConfiguracionScreen extends StatelessWidget {
                     // Ayuda y Soporte
                     Container(
                       decoration: BoxDecoration(
-                        color: DashboardColors.cardBackground,
+                        color: ThemeColors.getCardBackground(theme),
                         borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: ThemeColors.getCardBorder(theme),
+                          width: 1,
+                        ),
                       ),
                       child: Column(
                         children: [
@@ -94,6 +104,7 @@ class ConfiguracionScreen extends StatelessWidget {
                               // TODO: Implementar ayuda y soporte
                             },
                             showBorder: true,
+                            theme: theme,
                           ),
                           _buildOptionCard(
                             icon: Icons.info_outline,
@@ -101,6 +112,7 @@ class ConfiguracionScreen extends StatelessWidget {
                             onTap: () {
                               // TODO: Implementar acerca de
                             },
+                            theme: theme,
                           ),
                         ],
                       ),
@@ -155,11 +167,16 @@ class ConfiguracionScreen extends StatelessWidget {
     required String title,
     required VoidCallback onTap,
     bool showBorder = false,
+    required ThemeData theme,
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: DashboardColors.cardBackground,
+        color: ThemeColors.getCardBackground(theme),
         borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: ThemeColors.getCardBorder(theme),
+          width: 1,
+        ),
       ),
       child: Material(
         color: Colors.transparent,
@@ -172,7 +189,7 @@ class ConfiguracionScreen extends StatelessWidget {
               border: showBorder
                   ? Border(
                       bottom: BorderSide(
-                        color: DashboardColors.dividerColor,
+                        color: ThemeColors.getDivider(theme),
                         width: 1,
                       ),
                     )
@@ -182,7 +199,7 @@ class ConfiguracionScreen extends StatelessWidget {
               children: [
                 Icon(
                   icon,
-                  color: DashboardColors.secondaryText,
+                  color: ThemeColors.getSecondaryText(theme),
                   size: 24,
                 ),
                 const SizedBox(width: 16),
@@ -190,7 +207,7 @@ class ConfiguracionScreen extends StatelessWidget {
                   child: Text(
                     title,
                     style: TextStyle(
-                      color: DashboardColors.primaryText,
+                      color: ThemeColors.getPrimaryText(theme),
                       fontWeight: FontWeight.w500,
                       fontSize: 16,
                     ),
@@ -198,7 +215,7 @@ class ConfiguracionScreen extends StatelessWidget {
                 ),
                 Icon(
                   Icons.chevron_right,
-                  color: DashboardColors.secondaryText,
+                  color: ThemeColors.getSecondaryText(theme),
                   size: 24,
                 ),
               ],
@@ -209,11 +226,11 @@ class ConfiguracionScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildThemeSelector(ThemeProvider themeProvider) {
+  Widget _buildThemeSelector(ThemeProvider themeProvider, ThemeData theme) {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: DashboardColors.cardBorder,
+        color: ThemeColors.getCardBorder(theme),
         borderRadius: BorderRadius.circular(24),
       ),
       child: Row(
@@ -223,18 +240,21 @@ class ConfiguracionScreen extends StatelessWidget {
             ThemeMode.light,
             themeProvider.themeMode == ThemeMode.light,
             () => themeProvider.setThemeMode(ThemeMode.light),
+            theme,
           ),
           _buildThemeOption(
             'Oscuro',
             ThemeMode.dark,
             themeProvider.themeMode == ThemeMode.dark,
             () => themeProvider.setThemeMode(ThemeMode.dark),
+            theme,
           ),
           _buildThemeOption(
             'Sistema',
             ThemeMode.system,
             themeProvider.themeMode == ThemeMode.system,
             () => themeProvider.setThemeMode(ThemeMode.system),
+            theme,
           ),
         ],
       ),
@@ -246,6 +266,7 @@ class ConfiguracionScreen extends StatelessWidget {
     ThemeMode mode,
     bool isActive,
     VoidCallback onTap,
+    ThemeData theme,
   ) {
     return Expanded(
       child: GestureDetector(
@@ -253,14 +274,14 @@ class ConfiguracionScreen extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 8),
           decoration: BoxDecoration(
-            color: isActive ? DashboardColors.accentBlue : Colors.transparent,
+            color: isActive ? ThemeColors.accentBlue : Colors.transparent,
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
             label,
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: isActive ? Colors.white : DashboardColors.secondaryText,
+              color: isActive ? Colors.white : ThemeColors.getSecondaryText(theme),
               fontSize: 14,
               fontWeight: FontWeight.w500,
             ),

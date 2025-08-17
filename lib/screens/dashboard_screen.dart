@@ -11,7 +11,7 @@ import 'package:zypher/domain/enrollment/usecases/get_events_by_enrollment_and_d
 
 import '../domain/enrollment/models/enrollment.dart';
 import 'package:zypher/core/constants/tailwind_colors.dart';
-import 'package:zypher/core/constants/dashboard_colors.dart';
+import 'package:zypher/core/constants/theme_colors.dart';
 import 'package:provider/provider.dart';
 import '../core/providers/student_provider.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -1427,7 +1427,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: DashboardColors.accentYellow.withOpacity(0.1),
+        color: ThemeColors.accentYellow.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -1436,12 +1436,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: DashboardColors.accentYellow.withOpacity(0.2),
+              color: ThemeColors.accentYellow.withOpacity(0.2),
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Icon(
               Icons.event,
-              color: DashboardColors.accentYellow,
+              color: ThemeColors.accentYellow,
               size: 24,
             ),
           ),
@@ -1454,7 +1454,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   title,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: DashboardColors.accentYellow,
+                    color: ThemeColors.accentYellow,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -1674,7 +1674,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
 
     return Scaffold(
-      backgroundColor:const Color(0xFF111827), // 
+      backgroundColor: ThemeColors.getBackground(Theme.of(context)),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
@@ -1708,7 +1708,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         'Ver todo',
                         style: TextStyle(
                           fontSize: 14,
-                          color: DashboardColors.accentBlue,
+                          color: ThemeColors.accentBlue,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -1858,10 +1858,10 @@ class _ArrivalHistoryChartState extends State<ArrivalHistoryChart> {
       height: 280,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: isDark ? DashboardColors.cardBackground : Colors.white,
+        color: ThemeColors.getCardBackground(Theme.of(context)),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDark ? DashboardColors.cardBorder : const Color(0xFFE5E7EB),
+                      color: ThemeColors.getCardBorder(Theme.of(context)),
           width: 1,
         ),
       ),
@@ -1877,7 +1877,7 @@ class _ArrivalHistoryChartState extends State<ArrivalHistoryChart> {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: isDark ? DashboardColors.primaryText : const Color(0xFF0F172A),
+                    color: ThemeColors.getPrimaryText(Theme.of(context)),
                   ),
                 ),
               ),
@@ -1886,14 +1886,14 @@ class _ArrivalHistoryChartState extends State<ArrivalHistoryChart> {
                   IconButton(
                     icon: Icon(
                       Icons.chevron_left,
-                      color: isDark ? DashboardColors.primaryText : const Color(0xFF0F172A),
+                      color: ThemeColors.getPrimaryText(Theme.of(context)),
                     ),
                     onPressed: () => _navigateWeek(-1),
                   ),
                   IconButton(
                     icon: Icon(
                       Icons.chevron_right,
-                      color: isDark ? DashboardColors.primaryText : const Color(0xFF0F172A),
+                      color: ThemeColors.getPrimaryText(Theme.of(context)),
                     ),
                     onPressed: () => _navigateWeek(1),
                   ),
@@ -1907,7 +1907,7 @@ class _ArrivalHistoryChartState extends State<ArrivalHistoryChart> {
             child: _isLoading
                 ? Center(
                     child: CircularProgressIndicator(
-                      color: isDark ? DashboardColors.primaryText : const Color(0xFF3B82F6),
+                                              color: ThemeColors.getPrimaryText(Theme.of(context)),
                     ),
                   )
                 : _buildBarChart(),
@@ -1928,20 +1928,20 @@ class _ArrivalHistoryChartState extends State<ArrivalHistoryChart> {
             Icon(
               Icons.bar_chart, 
               size: 48, 
-              color: isDark ? DashboardColors.tertiaryText : const Color(0xFF9CA3AF),
+              color: ThemeColors.getTertiaryText(Theme.of(context)),
             ),
             const SizedBox(height: 8),
             Text(
               'No hay datos de asistencia',
               style: TextStyle(
-                color: isDark ? DashboardColors.secondaryText : const Color(0xFF6B7280),
+                color: ThemeColors.getSecondaryText(Theme.of(context)),
               ),
             ),
             const SizedBox(height: 4),
             Text(
               'para esta semana',
               style: TextStyle(
-                color: isDark ? DashboardColors.tertiaryText : const Color(0xFF9CA3AF), 
+                color: ThemeColors.getTertiaryText(Theme.of(context)), 
                 fontSize: 12,
               ),
             ),
@@ -2011,14 +2011,14 @@ class _ArrivalHistoryChartState extends State<ArrivalHistoryChart> {
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
-                            color: isDark ? DashboardColors.tertiaryText : const Color(0xFF9CA3AF),
+                            color: ThemeColors.getTertiaryText(Theme.of(context)),
                           ),
                         ),
                         Text(
                           date,
                           style: TextStyle(
                             fontSize: 9,
-                            color: isDark ? DashboardColors.tertiaryText : const Color(0xFF9CA3AF),
+                            color: ThemeColors.getTertiaryText(Theme.of(context)),
                           ),
                         ),
                       ],
@@ -2039,7 +2039,7 @@ class _ArrivalHistoryChartState extends State<ArrivalHistoryChart> {
                   '${value.toInt()}:00',
                   style: TextStyle(
                     fontSize: 10,
-                    color: isDark ? DashboardColors.tertiaryText : const Color(0xFF9CA3AF),
+                    color: ThemeColors.getTertiaryText(Theme.of(context)),
                   ),
                 );
               },
@@ -2058,8 +2058,8 @@ class _ArrivalHistoryChartState extends State<ArrivalHistoryChart> {
               BarChartRodData(
                 toY: data['hour'].toDouble(),
                 color: data['hour'] > 0 
-                    ? (isToday ? DashboardColors.accentGreen : DashboardColors.barBlue)
-                    : (isDark ? DashboardColors.cardBorder : const Color(0xFFF3F4F6)),
+                                          ? (isToday ? ThemeColors.accentGreen : ThemeColors.accentBlue)
+                    : ThemeColors.getCardBorder(Theme.of(context)),
                 width: 25,
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(4),

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:zypher/core/providers/student_provider.dart';
 import 'package:zypher/domain/enrollment/models/enrollment.dart';
+import 'package:zypher/core/constants/theme_colors.dart';
 
 class AsistenciasScreen extends StatefulWidget {
   const AsistenciasScreen({super.key});
@@ -47,9 +48,10 @@ class _AsistenciasScreenState extends State<AsistenciasScreen> {
   Widget build(BuildContext context) {
     final studentProvider = Provider.of<StudentProvider>(context);
     final currentStudent = studentProvider.currentStudent;
+    final theme = Theme.of(context);
     
     return Scaffold(
-      backgroundColor: const Color(0xFF111827), // bg-gray-900
+      backgroundColor: ThemeColors.getBackground(theme),
       body: Column(
         children: [
 
@@ -60,11 +62,11 @@ class _AsistenciasScreenState extends State<AsistenciasScreen> {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  if (currentStudent != null) _buildStudentInfo(currentStudent),
+                  if (currentStudent != null) _buildStudentInfo(currentStudent, theme),
                   const SizedBox(height: 24),
-                  _buildMonthlyCalendar(),
+                  _buildMonthlyCalendar(theme),
                   const SizedBox(height: 24),
-                  _buildMonthlySummary(),
+                  _buildMonthlySummary(theme),
                   const SizedBox(height: 16),
                   _buildDetailedReportButton(),
                 ],
@@ -76,40 +78,9 @@ class _AsistenciasScreenState extends State<AsistenciasScreen> {
     );
   }
 
-  Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      color: const Color(0xFF111827), // bg-gray-900
-      child: SafeArea(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const SizedBox(width: 48), // Espacio para centrar el título
-            const Text(
-              'Asistencia',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            IconButton(
-              onPressed: () {
-                // Mostrar selector de fecha
-                _showDatePicker();
-              },
-              icon: const Icon(
-                Icons.calendar_today,
-                color: Colors.white,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
-  Widget _buildStudentInfo(EnrollmentWithRelations enrollment) {
+
+  Widget _buildStudentInfo(EnrollmentWithRelations enrollment, ThemeData theme) {
     final student = enrollment.student;
     final grade = enrollment.grade;
     
@@ -126,8 +97,8 @@ class _AsistenciasScreenState extends State<AsistenciasScreen> {
           child: student.thumbnail == null
               ? Text(
                   '${student.firstName.isNotEmpty ? student.firstName[0] : ''}${student.lastName.isNotEmpty ? student.lastName[0] : ''}',
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: ThemeColors.getPrimaryText(theme),
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
@@ -141,17 +112,17 @@ class _AsistenciasScreenState extends State<AsistenciasScreen> {
             children: [
               Text(
                 '${student.firstName} ${student.lastName}',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: ThemeColors.getPrimaryText(theme),
                 ),
               ),
               Text(
                 '${grade.level.toString().split('.').last} / ${grade.name}',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
-                  color: Color(0xFF9CA3AF), // text-gray-400
+                  color: ThemeColors.getTertiaryText(theme), // text-gray-400
                 ),
               ),
             ],
@@ -161,7 +132,7 @@ class _AsistenciasScreenState extends State<AsistenciasScreen> {
     );
   }
 
-  Widget _buildMonthlyCalendar() {
+  Widget _buildMonthlyCalendar(ThemeData theme) {
     final monthName = DateFormat('MMMM yyyy', 'es').format(_selectedMonth);
     final firstDayOfMonth = DateTime(_selectedMonth.year, _selectedMonth.month, 1);
     final lastDayOfMonth = DateTime(_selectedMonth.year, _selectedMonth.month + 1, 0);
@@ -173,7 +144,7 @@ class _AsistenciasScreenState extends State<AsistenciasScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1F2937), // bg-gray-800
+        color: ThemeColors.getCardBackground(theme), // bg-gray-800
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -184,10 +155,10 @@ class _AsistenciasScreenState extends State<AsistenciasScreen> {
             children: [
               Text(
                 monthName,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
-                  color: Colors.white,
+                  color: ThemeColors.getPrimaryText(theme),
                 ),
               ),
               Row(
@@ -197,13 +168,13 @@ class _AsistenciasScreenState extends State<AsistenciasScreen> {
                     icon: Container(
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF374151), // bg-gray-700
+                        color: ThemeColors.getCardBorder(theme), // bg-gray-700
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.chevron_left,
                         size: 16,
-                        color: Colors.white,
+                        color: ThemeColors.getPrimaryText(theme),
                       ),
                     ),
                   ),
@@ -212,13 +183,13 @@ class _AsistenciasScreenState extends State<AsistenciasScreen> {
                     icon: Container(
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF374151), // bg-gray-700
+                        color: ThemeColors.getCardBorder(theme), // bg-gray-700
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.chevron_left,
                         size: 16,
-                        color: Colors.white,
+                        color: ThemeColors.getPrimaryText(theme),
                       ),
                     ),
                   ),
@@ -235,9 +206,9 @@ class _AsistenciasScreenState extends State<AsistenciasScreen> {
                 child: Text(
                   day,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
-                    color: Color(0xFF9CA3AF), // text-gray-400
+                    color: ThemeColors.getTertiaryText(theme), // text-gray-400
                   ),
                 ),
               )
@@ -246,16 +217,16 @@ class _AsistenciasScreenState extends State<AsistenciasScreen> {
           const SizedBox(height: 8),
           
           // Calendario
-          _buildCalendarGrid(adjustedFirstWeekday, lastDayOfMonth.day),
+          _buildCalendarGrid(adjustedFirstWeekday, lastDayOfMonth.day, theme),
           
           // Leyenda
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildLegendItem('Presente', const Color(0xFF10B981)), // bg-green-500
-              _buildLegendItem('Ausente', const Color(0xFFEF4444)), // bg-red-500
-              _buildLegendItem('Tardanza', const Color(0xFFF59E0B)), // bg-yellow-500
+              _buildLegendItem('Presente', const Color(0xFF10B981), theme), // bg-green-500
+              _buildLegendItem('Ausente', const Color(0xFFEF4444), theme), // bg-red-500
+              _buildLegendItem('Tardanza', const Color(0xFFF59E0B), theme), // bg-yellow-500
             ],
           ),
         ],
@@ -263,7 +234,7 @@ class _AsistenciasScreenState extends State<AsistenciasScreen> {
     );
   }
 
-  Widget _buildCalendarGrid(int firstWeekday, int lastDay) {
+  Widget _buildCalendarGrid(int firstWeekday, int lastDay, ThemeData theme) {
     final totalCells = firstWeekday + lastDay;
     final rows = (totalCells / 7).ceil();
     
@@ -286,7 +257,7 @@ class _AsistenciasScreenState extends State<AsistenciasScreen> {
             
             final attendanceStatus = _attendanceData[dayNumber];
             Color backgroundColor;
-            Color textColor = Colors.white;
+            Color textColor = ThemeColors.getPrimaryText(theme);
             
             switch (attendanceStatus) {
               case 'present':
@@ -300,7 +271,7 @@ class _AsistenciasScreenState extends State<AsistenciasScreen> {
                 break;
               default:
                 backgroundColor = Colors.transparent;
-                textColor = Colors.white;
+                textColor = ThemeColors.getPrimaryText(theme);
             }
             
             return Expanded(
@@ -329,7 +300,7 @@ class _AsistenciasScreenState extends State<AsistenciasScreen> {
     );
   }
 
-  Widget _buildLegendItem(String label, Color color) {
+  Widget _buildLegendItem(String label, Color color, ThemeData theme) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -344,16 +315,16 @@ class _AsistenciasScreenState extends State<AsistenciasScreen> {
         const SizedBox(width: 8),
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12,
-            color: Colors.white,
+            color: ThemeColors.getPrimaryText(theme),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildMonthlySummary() {
+  Widget _buildMonthlySummary(ThemeData theme) {
     // Calcular estadísticas
     final presentDays = _attendanceData.values.where((status) => status == 'present').length;
     final absentDays = _attendanceData.values.where((status) => status == 'absent').length;
@@ -362,19 +333,19 @@ class _AsistenciasScreenState extends State<AsistenciasScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Resumen del Mes',
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: Color(0xFF9CA3AF), // text-gray-400
+            color: ThemeColors.getTertiaryText(theme), // text-gray-400
           ),
         ),
         const SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: const Color(0xFF1F2937), // bg-gray-800
+            color: ThemeColors.getCardBackground(theme), // bg-gray-800
             borderRadius: BorderRadius.circular(12),
           ),
           child: Column(
@@ -384,6 +355,7 @@ class _AsistenciasScreenState extends State<AsistenciasScreen> {
                 'Asistencias',
                 '$presentDays días',
                 const Color(0xFF34D399), // text-green-400
+                theme,
               ),
               const SizedBox(height: 12),
               _buildSummaryRow(
@@ -391,6 +363,7 @@ class _AsistenciasScreenState extends State<AsistenciasScreen> {
                 'Inasistencias',
                 '$absentDays días',
                 const Color(0xFFF87171), // text-red-400
+                theme,
               ),
               const SizedBox(height: 12),
               _buildSummaryRow(
@@ -398,6 +371,7 @@ class _AsistenciasScreenState extends State<AsistenciasScreen> {
                 'Tardanzas',
                 '$lateDays días',
                 const Color(0xFFFBBF24), // text-yellow-400
+                theme,
               ),
             ],
           ),
@@ -406,7 +380,7 @@ class _AsistenciasScreenState extends State<AsistenciasScreen> {
     );
   }
 
-  Widget _buildSummaryRow(IconData icon, String label, String value, Color iconColor) {
+  Widget _buildSummaryRow(IconData icon, String label, String value, Color iconColor, ThemeData theme) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -420,8 +394,8 @@ class _AsistenciasScreenState extends State<AsistenciasScreen> {
             const SizedBox(width: 12),
             Text(
               label,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: ThemeColors.getPrimaryText(theme),
                 fontSize: 14,
               ),
             ),
@@ -429,8 +403,8 @@ class _AsistenciasScreenState extends State<AsistenciasScreen> {
         ),
         Text(
           value,
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: ThemeColors.getPrimaryText(theme),
             fontSize: 14,
             fontWeight: FontWeight.w600,
           ),
@@ -476,9 +450,9 @@ class _AsistenciasScreenState extends State<AsistenciasScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.dark(
-              primary: Color(0xFF60A5FA),
-              surface: Color(0xFF1F2937),
+            colorScheme: ColorScheme.dark(
+              primary: const Color(0xFF60A5FA),
+              surface: ThemeColors.getCardBackground(Theme.of(context)),
             ),
           ),
           child: child!,

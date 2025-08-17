@@ -7,7 +7,7 @@ import 'package:zypher/domain/enrollment/dtos/get_enrollments_by_guardian_dto.da
 import 'package:zypher/domain/enrollment/services/enrollment_service_repository.dart';
 import 'package:zypher/domain/enrollment/usecases/get_enrollments_by_guardian_usecase.dart';
 import 'package:zypher/screens/dashboard_screen.dart';
-import 'package:zypher/core/constants/dashboard_colors.dart';
+import 'package:zypher/core/constants/theme_colors.dart';
 
 import 'asistencias_screen.dart';
 import 'eventos_screen.dart';
@@ -96,18 +96,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: isDark ? DashboardColors.mainBackground : Colors.white,
+      backgroundColor: ThemeColors.getBackground(theme),
       appBar: AppBar(
-        backgroundColor: isDark ? const Color(0xFF111827) : Colors.white,
+        backgroundColor: ThemeColors.getCardBackground(theme),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               'Zypher',
               style: TextStyle(
-                color: isDark ? DashboardColors.primaryText : const Color(0xFF0F172A),
+                color: ThemeColors.getPrimaryText(theme),
                 fontWeight: FontWeight.w600,
                 fontSize: 18,
               ),
@@ -115,7 +115,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Text(
               _getScreenTitle(_selectedIndex),
               style: TextStyle(
-                color: isDark ? DashboardColors.secondaryText : const Color(0xFF6B7280),
+                color: ThemeColors.getSecondaryText(theme),
                 fontWeight: FontWeight.w400,
                 fontSize: 14,
               ),
@@ -142,10 +142,14 @@ class _HomeScreenState extends State<HomeScreen> {
                           shrinkWrap: true,
                           children: [
                             const SizedBox(height: 16),
-                            const Center(
+                            Center(
                               child: Text(
                                 'Cambiar de estudiante',
-                                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                style: TextStyle(
+                                  fontSize: 18, 
+                                  fontWeight: FontWeight.bold,
+                                  color: ThemeColors.getPrimaryText(theme),
+                                ),
                               ),
                             ),
                             const SizedBox(height: 16),
@@ -163,7 +167,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                           )
                                         : null,
                                   ),
-                                  title: Text('${s.firstName} ${s.lastName}'),
+                                  title: Text(
+                                    '${s.firstName} ${s.lastName}',
+                                    style: TextStyle(
+                                      color: ThemeColors.getPrimaryText(theme),
+                                    ),
+                                  ),
                                   selected: i == studentProvider.currentIndex,
                                   onTap: () {
                                     studentProvider.changeStudent(i);
@@ -186,7 +195,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ? Text(
                                 '${student.firstName.isNotEmpty ? student.firstName[0] : ''}${student.lastName.isNotEmpty ? student.lastName[0] : ''}',
                                 style: TextStyle(
-                                  color: DashboardColors.primaryText,
+                                  color: ThemeColors.getPrimaryText(theme),
                                   fontWeight: FontWeight.w600,
                                 ),
                               )
@@ -220,20 +229,20 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       body: _screens[_selectedIndex],
-      bottomNavigationBar: _buildBottomNavigation(),
+      bottomNavigationBar: _buildBottomNavigation(theme),
     );
   }
 
-  Widget _buildBottomNavigation() {
+  Widget _buildBottomNavigation(ThemeData theme) {
     return Container(
-      color: const Color(0xFF1F2937), // bg-gray-800
+      color: ThemeColors.getCardBackground(theme),
       child: SafeArea(
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 8),
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             border: Border(
               top: BorderSide(
-                color: Color(0xFF374151), // border-gray-700
+                color: ThemeColors.getCardBorder(theme),
                 width: 1,
               ),
             ),
@@ -241,11 +250,11 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildNavItem(Icons.home, 'Inicio', _selectedIndex == 0, () => _onItemTapped(0)),
-              _buildNavItem(Icons.check_circle, 'Asistencia', _selectedIndex == 1, () => _onItemTapped(1)),
-              _buildNavItem(Icons.event, 'Eventos', _selectedIndex == 2, () => _onItemTapped(2)),
-              _buildNavItem(Icons.visibility, 'Observac.', _selectedIndex == 3, () => _onItemTapped(3)),
-              _buildNavItem(Icons.settings, 'Ajustes', _selectedIndex == 4, () => _onItemTapped(4)),
+              _buildNavItem(Icons.home, 'Inicio', _selectedIndex == 0, () => _onItemTapped(0), theme),
+              _buildNavItem(Icons.check_circle, 'Asistencia', _selectedIndex == 1, () => _onItemTapped(1), theme),
+              _buildNavItem(Icons.event, 'Eventos', _selectedIndex == 2, () => _onItemTapped(2), theme),
+              _buildNavItem(Icons.visibility, 'Observac.', _selectedIndex == 3, () => _onItemTapped(3), theme),
+              _buildNavItem(Icons.settings, 'Ajustes', _selectedIndex == 4, () => _onItemTapped(4), theme),
             ],
           ),
         ),
@@ -253,13 +262,13 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildNavItem(IconData icon, String label, bool isActive, VoidCallback onTap) {
+  Widget _buildNavItem(IconData icon, String label, bool isActive, VoidCallback onTap, ThemeData theme) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: isActive ? const Color(0xFF374151).withOpacity(0.3) : Colors.transparent,
+          color: isActive ? ThemeColors.getCardBorder(theme).withOpacity(0.3) : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
@@ -268,8 +277,8 @@ class _HomeScreenState extends State<HomeScreen> {
             Icon(
               icon,
               color: isActive 
-                  ? const Color(0xFF60A5FA) // text-blue-400
-                  : const Color(0xFF9CA3AF), // text-gray-400
+                  ? ThemeColors.accentBlue
+                  : ThemeColors.getTertiaryText(theme),
               size: 24,
             ),
             const SizedBox(height: 4),
@@ -278,8 +287,8 @@ class _HomeScreenState extends State<HomeScreen> {
               style: TextStyle(
                 fontSize: 12,
                 color: isActive 
-                    ? const Color(0xFF60A5FA) // text-blue-400
-                    : const Color(0xFF9CA3AF) // text-gray-400
+                    ? ThemeColors.accentBlue
+                    : ThemeColors.getTertiaryText(theme)
               ),
             ),
           ],

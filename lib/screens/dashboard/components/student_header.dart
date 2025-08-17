@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:zypher/domain/enrollment/models/enrollment.dart';
 import 'package:zypher/core/providers/student_provider.dart';
-import 'package:zypher/core/constants/dashboard_colors.dart';
+import 'package:zypher/core/constants/theme_colors.dart';
 
 class StudentHeader extends StatelessWidget {
   final EnrollmentWithRelations studentEnrollment;
@@ -17,15 +17,15 @@ class StudentHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final student = studentEnrollment.student;
     final grade = studentEnrollment.grade;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
     
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: isDark ? DashboardColors.cardBackground : Colors.white,
+        color: ThemeColors.getCardBackground(theme),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isDark ? DashboardColors.cardBorder : const Color(0xFFE5E7EB),
+          color: ThemeColors.getCardBorder(theme),
           width: 1,
         ),
       ),
@@ -34,7 +34,7 @@ class StudentHeader extends StatelessWidget {
           IconButton(
             icon: Icon(
               Icons.chevron_left,
-              color: isDark ? DashboardColors.tertiaryText : const Color(0xFF6B7280),
+              color: ThemeColors.getTertiaryText(theme),
             ),
             onPressed: studentProvider.currentIndex > 0
                 ? () => studentProvider.changeStudent(studentProvider.currentIndex - 1)
@@ -43,12 +43,12 @@ class StudentHeader extends StatelessWidget {
           CircleAvatar(
             radius: 24,
             backgroundImage: student.thumbnail != null ? NetworkImage(student.thumbnail!) : null,
-            backgroundColor: isDark ? DashboardColors.cardBorder : const Color(0xFFF3F4F6),
+            backgroundColor: ThemeColors.getCardBorder(theme),
             child: student.thumbnail == null
                 ? Text(
                     '${student.firstName.isNotEmpty ? student.firstName[0] : ''}${student.lastName.isNotEmpty ? student.lastName[0] : ''}',
                     style: TextStyle(
-                      color: isDark ? DashboardColors.primaryText : const Color(0xFF6B7280),
+                      color: ThemeColors.getPrimaryText(theme),
                       fontWeight: FontWeight.w600,
                     ),
                   )
@@ -64,7 +64,7 @@ class StudentHeader extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
-                    color: isDark ? DashboardColors.primaryText : const Color(0xFF0F172A),
+                    color: ThemeColors.getPrimaryText(theme),
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -72,17 +72,17 @@ class StudentHeader extends StatelessWidget {
                   '${grade.level.toString().split('.').last} / ${grade.name}',
                   style: TextStyle(
                     fontSize: 14,
-                    color: isDark ? DashboardColors.tertiaryText : const Color(0xFF6B7280),
+                    color: ThemeColors.getTertiaryText(theme),
                   ),
                 ),
               ],
             ),
           ),
           IconButton(
-            icon:               Icon(
-                Icons.chevron_right,
-                color: isDark ? DashboardColors.tertiaryText : const Color(0xFF6B7280),
-              ),
+            icon: Icon(
+              Icons.chevron_right,
+              color: ThemeColors.getTertiaryText(theme),
+            ),
             onPressed: studentProvider.currentIndex < studentProvider.students.length - 1
                 ? () => studentProvider.changeStudent(studentProvider.currentIndex + 1)
                 : null,

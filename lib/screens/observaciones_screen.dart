@@ -6,6 +6,7 @@ import 'package:zypher/domain/enrollment/models/enrollment_observation.dart';
 import 'package:zypher/domain/enrollment/services/enrollment_obsevation_service_repository.dart';
 import 'package:zypher/domain/enrollment/usecases/get_events_by_enrollment.usecase.dart';
 import 'package:intl/intl.dart';
+import 'package:zypher/core/constants/theme_colors.dart';
 
 class ObservacionesScreen extends StatefulWidget {
   const ObservacionesScreen({super.key});
@@ -133,6 +134,7 @@ class _ObservacionesScreenState extends State<ObservacionesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final studentProvider = Provider.of<StudentProvider>(context);
     final currentStudent = studentProvider.currentStudent;
 
@@ -149,7 +151,7 @@ class _ObservacionesScreenState extends State<ObservacionesScreen> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFF111827),
+      backgroundColor: ThemeColors.getBackground(theme),
       body: Column(
         children: [
 
@@ -166,10 +168,10 @@ class _ObservacionesScreenState extends State<ObservacionesScreen> {
                   child: currentStudent.student.thumbnail == null
                       ? Text(
                           '${currentStudent.student.firstName.isNotEmpty ? currentStudent.student.firstName[0] : ''}${currentStudent.student.lastName.isNotEmpty ? currentStudent.student.lastName[0] : ''}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                            color: ThemeColors.getPrimaryText(theme),
                           ),
                         )
                       : null,
@@ -181,16 +183,16 @@ class _ObservacionesScreenState extends State<ObservacionesScreen> {
                     children: [
                       Text(
                         '${currentStudent.student.firstName} ${currentStudent.student.lastName}',
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: ThemeColors.getPrimaryText(theme),
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       Text(
                         '${currentStudent.grade.level.toString()} / ${currentStudent.grade.name}',
-                        style: const TextStyle(
-                          color: Color(0xFF9CA3AF),
+                        style: TextStyle(
+                          color: ThemeColors.getSecondaryText(theme).withOpacity(0.6),
                           fontSize: 14,
                         ),
                       ),
@@ -207,7 +209,7 @@ class _ObservacionesScreenState extends State<ObservacionesScreen> {
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
-              color: const Color(0xFF1F2937),
+              color: ThemeColors.getCardBackground(theme),
               borderRadius: BorderRadius.circular(25),
             ),
             child: Row(
@@ -222,14 +224,14 @@ class _ObservacionesScreenState extends State<ObservacionesScreen> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                       decoration: BoxDecoration(
-                        color: _filterByDate ? const Color(0xFF3B82F6) : Colors.transparent,
+                        color: _filterByDate ? ThemeColors.accentBlue : Colors.transparent,
                         borderRadius: BorderRadius.circular(25),
                       ),
                       child: Text(
                         'Por Fecha',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          color: _filterByDate ? Colors.white : const Color(0xFF9CA3AF),
+                          color: _filterByDate ? Colors.white : ThemeColors.getSecondaryText(theme).withOpacity(0.6),
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
                         ),
@@ -247,14 +249,14 @@ class _ObservacionesScreenState extends State<ObservacionesScreen> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                       decoration: BoxDecoration(
-                        color: !_filterByDate ? const Color(0xFF3B82F6) : Colors.transparent,
+                        color: !_filterByDate ? ThemeColors.accentBlue : Colors.transparent,
                         borderRadius: BorderRadius.circular(25),
                       ),
                       child: Text(
                         'Por Categoría',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          color: !_filterByDate ? Colors.white : const Color(0xFF9CA3AF),
+                          color: !_filterByDate ? Colors.white : ThemeColors.getSecondaryText(theme).withOpacity(0.6),
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
                         ),
@@ -293,7 +295,7 @@ class _ObservacionesScreenState extends State<ObservacionesScreen> {
                     : RefreshIndicator(
                         onRefresh: _fetchObservations,
                         color: const Color(0xFF3B82F6),
-                        child: _buildObservationsList(),
+                        child: _buildObservationsList(theme),
                       ),
           ),
         ],
@@ -301,15 +303,15 @@ class _ObservacionesScreenState extends State<ObservacionesScreen> {
     );
   }
 
-  Widget _buildObservationsList() {
+  Widget _buildObservationsList(ThemeData theme) {
     if (_filterByDate) {
-      return _buildObservationsByDate();
+      return _buildObservationsByDate(theme);
     } else {
-      return _buildObservationsByCategory();
+      return _buildObservationsByCategory(theme);
     }
   }
 
-  Widget _buildObservationsByDate() {
+  Widget _buildObservationsByDate(ThemeData theme) {
     final groupedObservations = _groupObservationsByDate();
     final sortedDates = groupedObservations.keys.toList()
       ..sort((a, b) {
@@ -342,14 +344,14 @@ class _ObservacionesScreenState extends State<ObservacionesScreen> {
               padding: const EdgeInsets.only(bottom: 8),
               child: Text(
                 date,
-                style: const TextStyle(
-                  color: Color(0xFF9CA3AF),
+                style: TextStyle(
+                  color: ThemeColors.getSecondaryText(theme).withOpacity(0.6),
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                 ),
               ),
             ),
-            ...observations.map((observation) => _buildObservationCard(observation)),
+            ...observations.map((observation) => _buildObservationCard(observation, theme)),
             const SizedBox(height: 16),
           ],
         );
@@ -357,7 +359,7 @@ class _ObservacionesScreenState extends State<ObservacionesScreen> {
     );
   }
 
-  Widget _buildObservationsByCategory() {
+  Widget _buildObservationsByCategory(ThemeData theme) {
     final groupedObservations = <String, List<EnrollmentObservation>>{};
     
     for (final observation in _observations) {
@@ -381,14 +383,14 @@ class _ObservacionesScreenState extends State<ObservacionesScreen> {
               padding: const EdgeInsets.only(bottom: 8),
               child: Text(
                 category,
-                style: const TextStyle(
-                  color: Color(0xFF9CA3AF),
+                style: TextStyle(
+                  color: ThemeColors.getSecondaryText(theme).withOpacity(0.6),
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                 ),
               ),
             ),
-            ...observations.map((observation) => _buildObservationCard(observation)),
+            ...observations.map((observation) => _buildObservationCard(observation, theme)),
             const SizedBox(height: 16),
           ],
         );
@@ -396,12 +398,12 @@ class _ObservacionesScreenState extends State<ObservacionesScreen> {
     );
   }
 
-  Widget _buildObservationCard(EnrollmentObservation observation) {
+  Widget _buildObservationCard(EnrollmentObservation observation, ThemeData theme) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1F2937),
+        color: ThemeColors.getCardBackground(theme),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: _getSeverityColor(observation.severity).withOpacity(0.2),
@@ -430,8 +432,8 @@ class _ObservacionesScreenState extends State<ObservacionesScreen> {
               children: [
                 Text(
                   observation.title,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: ThemeColors.getSecondaryText(theme),
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                   ),
@@ -439,8 +441,8 @@ class _ObservacionesScreenState extends State<ObservacionesScreen> {
                 const SizedBox(height: 4),
                 Text(
                   observation.description,
-                  style: const TextStyle(
-                    color: Color(0xFFD1D5DB),
+                  style: TextStyle(
+                    color: ThemeColors.getSecondaryText(theme).withOpacity(0.7),
                     fontSize: 14,
                   ),
                 ),
@@ -451,13 +453,13 @@ class _ObservacionesScreenState extends State<ObservacionesScreen> {
                     Icon(
                       Icons.access_time,
                       size: 14,
-                      color: const Color(0xFF6B7280),
+                      color: ThemeColors.getSecondaryText(theme).withOpacity(0.6),
                     ),
                     const SizedBox(width: 4),
                     Text(
                       _getTimeString(observation.date),
-                      style: const TextStyle(
-                        color: Color(0xFF6B7280),
+                      style: TextStyle(
+                        color: ThemeColors.getSecondaryText(theme).withOpacity(0.6),
                         fontSize: 12,
                       ),
                     ),

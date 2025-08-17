@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:zypher/core/constants/theme_colors.dart';
 
 class EventosScreen extends StatefulWidget {
   const EventosScreen({super.key});
@@ -45,8 +46,9 @@ class _EventosScreenState extends State<EventosScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: const Color(0xFF111827), // bg-gray-900
+      backgroundColor: ThemeColors.getBackground(theme),
       body: Column(
         children: [
           // Contenido principal
@@ -57,7 +59,7 @@ class _EventosScreenState extends State<EventosScreen> {
                 children: [
                   // Lista de eventos
                   Expanded(
-                    child: _buildEventosList(),
+                    child: _buildEventosList(theme),
                   ),
                 ],
               ),
@@ -68,17 +70,17 @@ class _EventosScreenState extends State<EventosScreen> {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(ThemeData theme) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         const SizedBox(width: 48), // Espacio para centrar el título
-        const Text(
+        Text(
           'Próximos Eventos',
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: ThemeColors.getPrimaryText(theme),
           ),
         ),
         const SizedBox(width: 48), // Espacio para centrar el título
@@ -86,25 +88,25 @@ class _EventosScreenState extends State<EventosScreen> {
     );
   }
 
-  Widget _buildEventosList() {
+  Widget _buildEventosList(ThemeData theme) {
     return ListView.separated(
       itemCount: _eventos.length,
       separatorBuilder: (context, index) => const SizedBox(height: 16),
       itemBuilder: (context, index) {
         final evento = _eventos[index];
-        return _buildEventoCard(evento);
+        return _buildEventoCard(evento, theme);
       },
     );
   }
 
-  Widget _buildEventoCard(Evento evento) {
+  Widget _buildEventoCard(Evento evento, ThemeData theme) {
     final mes = _getMesAbreviado(evento.fecha.month);
     final dia = evento.fecha.day;
     
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1F2937), // bg-gray-800
+        color: ThemeColors.getCardBackground(theme),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -115,23 +117,23 @@ class _EventosScreenState extends State<EventosScreen> {
             width: 64,
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0xFF374151), // bg-gray-700
+              color: ThemeColors.getCardBackground(theme),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Column(
               children: [
                 Text(
                   mes,
-                  style: const TextStyle(
-                    color: Color(0xFFF87171), // text-red-400
+                  style: TextStyle(
+                                         color: ThemeColors.accentRed,
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 Text(
                   dia.toString(),
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: ThemeColors.getPrimaryText(theme),
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                   ),
@@ -149,8 +151,8 @@ class _EventosScreenState extends State<EventosScreen> {
               children: [
                 Text(
                   evento.titulo,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: ThemeColors.getPrimaryText(theme),
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
@@ -158,16 +160,16 @@ class _EventosScreenState extends State<EventosScreen> {
                 const SizedBox(height: 8),
                 Text(
                   evento.horario,
-                  style: const TextStyle(
-                    color: Color(0xFF9CA3AF), // text-gray-400
+                  style: TextStyle(
+                    color: ThemeColors.getSecondaryText(theme),
                     fontSize: 14,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   evento.descripcion,
-                  style: const TextStyle(
-                    color: Color(0xFFD1D5DB), // text-gray-300
+                  style: TextStyle(
+                    color: ThemeColors.getSecondaryText(theme),
                     fontSize: 14,
                   ),
                 ),
